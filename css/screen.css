@@ -442,10 +442,13 @@ th {
 body {
   overflow: hidden;
   background: url("../img/stad_bg.jpg") no-repeat top center #5f732c;
+  background-image: url("../img/stad_bg.jpg"), url("../img/grass_bg.png");
+  background-position: top center, bottom center;
+  background-repeat: no-repeat;
 }
 
 /* GAME STAGE */
-/* line 8, ../compass/parts/project.scss */
+/* line 12, ../compass/parts/project.scss */
 #game_container {
   width: 100%;
   height: 100%;
@@ -455,7 +458,7 @@ body {
   box-sizing: border-box;
 }
 
-/* line 17, ../compass/parts/project.scss */
+/* line 21, ../compass/parts/project.scss */
 #game_stage {
   /*background-color: #c9eefd;*/
   width: 100%;

@@ -1,6 +1,10 @@
 body{
 	overflow:hidden;
 	background:url("../img/stad_bg.jpg") no-repeat top center #5f732c;
+
+	background-image: url("../img/stad_bg.jpg"), url("../img/grass_bg.png");
+	background-position: top center, bottom center;
+	background-repeat: no-repeat;
 }
 
 /* GAME STAGE */

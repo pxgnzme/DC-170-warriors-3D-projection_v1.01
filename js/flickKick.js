@@ -14,14 +14,14 @@ function flickKick(){
 		barheight:200,
 		postWidth:250,
 		dToPosts:700,
-		cameraHeight:35,
-		fovAddedMaxHtAtPosts:50,
+		cameraHeight:30,
+		fovAddedMaxHtAtPosts:150,
 		gravity:30,
 		pitchAngle:60,
 		dToScreen:30,
-		dSceenToBall:30,
-		balllength:20,
-		ballWidth:13
+		dSceenToBall:15,
+		balllength:15,
+		ballWidth:10
 
 	};
 
