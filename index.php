@@ -9,7 +9,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Warriors flick kick mechanics development</title>
+    <title>Warriors 3D projection</title>
 
     <link rel="stylesheet" href="fonts/foundation-icons.css" />
     <link rel="stylesheet" href="css/screen.css?1" />
@@ -20,6 +20,13 @@
   </head>
 
   <body>
+
+    <section id = "game_container"></section>
+
+    <!--  JAVASCRIPT -->
+    <script src="js/custom.js?1"></script>
+    <script src="js/flickKick.js?1"></script>
+    <!-- -->
 
   </body>
 </html>

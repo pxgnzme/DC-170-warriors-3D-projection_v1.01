@@ -1,0 +1,25 @@
+body{
+	overflow:hidden;
+	background:url("../img/stad_bg.jpg") no-repeat top center #5f732c;
+}
+
+/* GAME STAGE */
+
+#game_container{
+	width:100%;
+	height:100%;
+	position: relative;
+	-webkit-box-sizing: border-box; 
+  	-moz-box-sizing: border-box;    
+  	box-sizing: border-box; 
+}
+
+#game_stage{
+
+	/*background-color: #c9eefd;*/
+	width:100%;
+	-webkit-box-sizing: border-box; 
+  	-moz-box-sizing: border-box;    
+  	box-sizing: border-box;
+
+}
