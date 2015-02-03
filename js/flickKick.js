@@ -4,9 +4,13 @@ AUTHOR: FRAZER CAMERON @pixelgiantnz NZME
 VERSION 1.01
 */
 
+var canvas,context;
+
 function flickKick(){
 
 	var obj = this;
+
+	this.paused = true;
 
 	this.world = {
 
@@ -15,22 +19,50 @@ function flickKick(){
 		postWidth:250,
 		dToPosts:700,
 		cameraHeight:30,
-		fovAddedMaxHtAtPosts:150,
+		fovAddedMaxHtAtPosts:200,
 		gravity:30,
 		pitchAngle:60,
 		dToScreen:30,
 		dSceenToBall:15,
 		balllength:15,
-		ballWidth:10
+		ballWidth:10,
+		flightFrames:40
 
 	};
+
+	this.tradBallImageObj = new Image();
+
+	this.ball = {
+
+		speed:180,
+		angle:50,
+		gravity:30,
+		gAngle:15,
+		gDir:0,
+		curFF:0
+
+	};
+
+	this.postImageObj = new Image();
+
+	this.posts = {
+
+		postsScreenWidth:0,
+		topPostsScreenY:0,
+		postsScreenHeight:0
+
+	};
+	
 
 	this.createGame = function(w,ht){
 
 		obj.canvasWidth = w;
 		obj.canvasheight = ht;
 		obj.worldHeight = obj.canvasheight;
-		obj.worldWidth = obj.canvasheight;
+		obj.worldWidth = obj.worldHeight;
+
+		obj.postImageObj.src = 'img/posts.png';
+		obj.tradBallImageObj.src = 'img/ball_default.png';
 
 		$.logThis("Create game : width :> "+w+" :: height :> "+ht);
 
@@ -44,12 +76,19 @@ function flickKick(){
 
 		$.logThis("fov :> "+obj.world.fov);
 
-		obj.canvas = document.getElementById('game_stage');
-		obj.context = obj.canvas.getContext('2d');
+		canvas = document.getElementById('game_stage');
+		context = canvas.getContext('2d');
 
 		obj.drawWorld();
 
 
+	};
+
+	//wipe canvas -- 
+	this.wipeCanvas = function() {
+	
+		context.clearRect(0,0,obj.canvasWidth,obj.canvasheight);	
+		
 	};
 
 	this.drawWorld = function(){
@@ -60,110 +99,201 @@ function flickKick(){
 
 		var topPostsProjY = (obj.world.postHeight-obj.world.cameraHeight)/heightOfFovAtPosts;
 
-		var topPostsScreenY = (obj.worldHeight/2) - ((obj.worldHeight/2)*topPostsProjY);
+		obj.posts.topPostsScreenY = (obj.worldHeight/2) - ((obj.worldHeight/2)*topPostsProjY);
 
 		var bottomPostsProY = obj.world.cameraHeight/heightOfFovAtPosts;
 
 		var bottomPostsScreenY = (obj.worldHeight/2) + ((obj.worldHeight/2)*bottomPostsProY);
 
-		var postsScreenHeight = bottomPostsScreenY-topPostsScreenY;
+		obj.posts.postsScreenHeight = bottomPostsScreenY-obj.posts.topPostsScreenY;
 
-		var postsScreenWidth = postsScreenHeight * postsHFactor;
+		obj.posts.postsScreenWidth = obj.posts.postsScreenHeight * postsHFactor;
 
-		var postImageObj = new Image();
+		obj.postImageObj.onload = function() {
 
-		postImageObj.onload = function() {
-
-			obj.context.drawImage(postImageObj, obj.midX-(postsScreenWidth/2), topPostsScreenY,postsScreenWidth,postsScreenHeight);
+			context.drawImage(obj.postImageObj, obj.midX-(obj.posts.postsScreenWidth/2), obj.posts.topPostsScreenY,obj.posts.postsScreenWidth,obj.posts.postsScreenHeight);
 
 		};
 
-		postImageObj.src = 'img/posts.png';
-
-		// DRAW BALL
-
-		var cameraToBall = obj.world.dSceenToBall + obj.world.dToScreen;
-
-		var heightOfFovAtBall = Math.tan(obj.world.fov * Math.PI/180)*cameraToBall;
-
-		var topBallProjY = (obj.world.cameraHeight-obj.world.balllength)/heightOfFovAtBall;
-
-		var topBallScreenY = (obj.worldHeight/2) + ((obj.worldHeight/2)*topBallProjY);
-
-		var bottomBallProY = obj.world.cameraHeight/heightOfFovAtBall;
-
-		var bottomBallScreenY = (obj.worldHeight/2) + ((obj.worldHeight/2)*bottomBallProY);
-
-		var ballScreenHeight = bottomBallScreenY-topBallScreenY;
-
-
-		var ballScreenWidth = obj.world.ballHfactor * ballScreenHeight;
-
-		var ballImageObj = new Image();
-
-		ballImageObj.onload = function() {
-
-			obj.context.drawImage(ballImageObj, obj.midX-(ballScreenWidth/2), topBallScreenY,ballScreenWidth,ballScreenHeight);
-
-		};
-
-		ballImageObj.src = 'img/ball_default.png';
+		obj.drawBall();
 
 	};
 
+	this.refreshWorld = function(){
 
+		context.drawImage(obj.postImageObj, obj.midX-(obj.posts.postsScreenWidth/2), obj.posts.topPostsScreenY,obj.posts.postsScreenWidth,obj.posts.postsScreenHeight);
 
+		obj.getBallTrad();
 
+	};
 
+	this.getBallTrad = function(){
 
+		if(obj.ball.curFF < obj.world.flightFrames){
+		
+			obj.getBallSteps();
+			obj.ball.curFF++;
 
+		}else{
 
+			obj.ball.curFF = 0;
+			obj.getBallSteps();
+			obj.paused = true;
 
+		}
 
+	};
 
+	this.drawBall = function(){
 
+		var ts =  obj.world.dToPosts/obj.world.flightFrames;
+		
+		var curBallLenght = obj.ballLenghtAtX(ts*obj.ball.curFF);
+		var curBallWidth = curBallLenght*obj.world.ballHfactor;
 
+		var curBallY =  obj.getTradScreenV(ts*obj.ball.curFF,obj.getBallHeightAtX(ts*obj.ball.curFF))-(curBallLenght/2);
 
+		var curBallX = obj.midX-(curBallWidth/2);
 
+		obj.tradBallImageObj.onload = function() {
 
+			context.drawImage(obj.tradBallImageObj, curBallX, curBallY,curBallWidth, curBallLenght);
 
+		};
 
+	}
 
+	this.getBallSteps = function(){
 
+		var ts =  obj.world.dToPosts/obj.world.flightFrames;
+		
+		var curBallLenght = obj.ballLenghtAtX(ts*obj.ball.curFF);
+		var curBallWidth = curBallLenght*obj.world.ballHfactor;
 
+		// get current vertical
+		var curBallV =  obj.getTradScreenV(ts*obj.ball.curFF,obj.getBallHeightAtX(ts*obj.ball.curFF))-(curBallLenght/2);
 
+		// get currnet horisontal
 
+		var curBallH = obj.getTradScreenH(ts*obj.ball.curFF) - (curBallWidth/2);
 
+		$.logThis("cur H :> "+curBallH);
+		//var curBallH = obj.midX-(curBallWidth/2);
 
+		context.drawImage(obj.tradBallImageObj, curBallH, curBallV,curBallWidth, curBallLenght);
 
+		
 
+	}
 
+	this.getBallHeightAtX = function(x){
 
+		var vX = obj.ball.speed * Math.cos(obj.ball.angle * Math.PI/180);
+		//$.logThis("Velocity X :> "+vX);
+		
+		var vY = obj.ball.speed * Math.sin(obj.ball.angle * Math.PI/180);
+		//$.logThis("Velocity Y :> "+vY);
 
+		var hAtX = ((x * vY)/vX) - (0.5 * obj.ball.gravity * (Math.pow(x,2)/Math.pow(vX,2)));
 
+		return hAtX;
 
+	};
 
+	this.getTradScreenV = function(d,ht){
 
+	 	var cameraToBall = d + obj.world.dToScreen + obj.world.dSceenToBall;
 
+		var heightOfFovAtBall = Math.tan(obj.world.fov * Math.PI/180)*cameraToBall;
 
+		var ballProjYFactor = (obj.world.cameraHeight-ht)/heightOfFovAtBall;
 
-	/*this.resizeGame = function(w,ht){
+		var topBallScreenY;
 
-		//obj.canvas.clearRect(0, 0, w, ht);
+		if(ballProjYFactor < 0){
 
-		//obj.createGame(w,ht);
+			ballScreenY = (obj.worldHeight/2) - ((obj.worldHeight/2)*(ballProjYFactor*-1));
 
-	};*/
+		}else{
 
-	/*this.clearCanvas = function(w,ht){
+			ballScreenY = (obj.worldHeight/2) + ((obj.worldHeight/2)*ballProjYFactor);
 
-		//var ct = obj.canvas;
-		//obj.canvas.clearRect(0, 0, w, ht);
+		}
 
-		//$.logThis("clear :: ct :> "+obj.canvas);
+		return ballScreenY;
 
-		obj.canvas.clearRect(0, 0, w, ht);
+	};
 
-	}*/
+	this.getTradScreenH = function(d){
+
+		var cameraToBall = d + obj.world.dToScreen + obj.world.dSceenToBall;
+
+		var hX = Math.tan(obj.ball.gAngle * Math.PI/180)*d;
+
+		var widthOfFovAtBall = Math.tan(obj.world.fov * Math.PI/180)*cameraToBall;
+
+		var hXFactor = hX/widthOfFovAtBall;
+
+		var ballScreenH;
+
+		if(obj.ball.gDir > 0){
+
+			ballScreenH = obj.midX - (obj.midX*hXFactor);
+
+		}else{
+
+			ballScreenH = obj.midX + (obj.midX*hXFactor);
+
+		}
+
+		return ballScreenH;
+
+	};
+
+	this.ballLenghtAtX = function(d){
+
+		var cameraToBall = d + obj.world.dToScreen + obj.world.dSceenToBall;
+
+		var heightOfFovAtBall = Math.tan(obj.world.fov * Math.PI/180)*cameraToBall;
+
+		var ballHeightFovFactor = obj.world.balllength/heightOfFovAtBall;
+
+		var ballLenght = (obj.worldHeight/2)*ballHeightFovFactor;
+
+		return ballLenght;
+
+	};
+
+	this.launchKick = function(){
+
+		$.logThis("launch kick");
+	
+		if(obj.paused){
+
+			obj.paused = false;
+			obj.gameLoop();
+			
+		}
+
+	}
+
+	//game loop
+	this.gameLoop = function() {
+		
+		if(!obj.paused){
+			
+			obj.wipeCanvas();
+			obj.refreshWorld();
+	
+			var gameInterval = setTimeout(obj.gameLoop, 1000 / 30);
+
+		}else{
+
+			$.logThis("ball flight ended");
+
+		}
+	  
+	}
+
 	
 }

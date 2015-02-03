@@ -15,9 +15,13 @@ $(document).ready(function(){
 
 	startGame();
 
+	resizeListeners();
+
 	var bgWFactor = 14389/1216;
 
 	$('body').css("background-size", (winHeight/2)*bgWFactor+"px "+winHeight/2+"px");
+
+
 
 });
 
@@ -26,18 +30,30 @@ function startGame(){
 	gameOb = new flickKick();
 	gameOb.createGame(winWidth, winHeight);
 
+	$('body').on('click',function(){
+
+		//$.logThis("Game state :> "+gameOb.paused);
+
+		if(gameOb.paused){
+
+			gameOb.launchKick();
+
+		}
+
+	});
+
 }
 
 function resizeListeners(){
 
-	/*$(window).on('resize',function(){
+	$(window).on('resize',function(){
 
-		gameOb.clearCanvas(winWidth, winHeight);
+		gameOb.wipeCanvas();
 
 		//clearTimeout(resizeTimer);
 		//resizeTimer = setTimeout(resizeCanvas, 100);
 
-	});*/
+	});
 
 }
 
