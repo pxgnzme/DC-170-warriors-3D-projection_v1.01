@@ -23,7 +23,10 @@
 
     <section id = "game_container"></section>
 
+    <div id="action_layer"></div>
+
     <!--  JAVASCRIPT -->
+    <script src="http://hammerjs.github.io/dist/hammer.js"></script>
     <script src="js/custom.js?1"></script>
     <script src="js/flickKick.js?1"></script>
     <!-- -->

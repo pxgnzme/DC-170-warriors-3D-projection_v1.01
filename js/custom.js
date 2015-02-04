@@ -8,6 +8,9 @@ var postsHeight = 500;
 var postsHFactor = postsWidth/postsHeight;
 var postsWFactor = postsHeight/postsWidth;
 
+var myElement = document.getElementById('action_layer');
+var mc = new Hammer(myElement);
+
 $(document).ready(function(){
 
 	winWidth = $(window).innerWidth();
@@ -30,15 +33,18 @@ function startGame(){
 	gameOb = new flickKick();
 	gameOb.createGame(winWidth, winHeight);
 
-	$('body').on('click',function(){
+	setupHammer();
 
-		//$.logThis("Game state :> "+gameOb.paused);
+}
 
-		if(gameOb.paused){
+function setupHammer(){
 
-			gameOb.launchKick();
+	mc.get("swipe").set({ direction: Hammer.DIRECTION_ALL, velocity:0});
 
-		}
+
+	mc.on("swipe", function(ev) {
+
+	    gameOb.launchKick(ev);
 
 	});
 

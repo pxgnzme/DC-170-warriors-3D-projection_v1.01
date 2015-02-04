@@ -1,3 +1,8 @@
+html{
+	width:100%;
+	height:100%;
+}
+
 body{
 	overflow:hidden;
 	background:url("../img/stad_bg.jpg") no-repeat top center #5f732c;
@@ -5,6 +10,8 @@ body{
 	background-image: url("../img/stad_bg.jpg"), url("../img/grass_bg.png");
 	background-position: top center, bottom center;
 	background-repeat: no-repeat;
+	width:100%;
+	height:100%;
 }
 
 /* GAME STAGE */
@@ -12,10 +19,12 @@ body{
 #game_container{
 	width:100%;
 	height:100%;
-	position: relative;
+	/*position: relative;*/
 	-webkit-box-sizing: border-box; 
   	-moz-box-sizing: border-box;    
   	box-sizing: border-box; 
+  	position: absolute;
+  	z-index: 500;
 }
 
 #game_stage{
@@ -25,5 +34,14 @@ body{
 	-webkit-box-sizing: border-box; 
   	-moz-box-sizing: border-box;    
   	box-sizing: border-box;
+
+}
+
+#action_layer{
+
+	width:100%;
+	height:100%;
+	position: absolute;
+	z-index: 1000;
 
 }

@@ -439,32 +439,50 @@ th {
 /* vars */
 /* project */
 /* line 1, ../compass/parts/project.scss */
+html {
+  width: 100%;
+  height: 100%;
+}
+
+/* line 6, ../compass/parts/project.scss */
 body {
   overflow: hidden;
   background: url("../img/stad_bg.jpg") no-repeat top center #5f732c;
   background-image: url("../img/stad_bg.jpg"), url("../img/grass_bg.png");
   background-position: top center, bottom center;
   background-repeat: no-repeat;
+  width: 100%;
+  height: 100%;
 }
 
 /* GAME STAGE */
-/* line 12, ../compass/parts/project.scss */
+/* line 19, ../compass/parts/project.scss */
 #game_container {
   width: 100%;
   height: 100%;
-  position: relative;
+  /*position: relative;*/
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
+  position: absolute;
+  z-index: 500;
 }
 
-/* line 21, ../compass/parts/project.scss */
+/* line 30, ../compass/parts/project.scss */
 #game_stage {
   /*background-color: #c9eefd;*/
   width: 100%;
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
+}
+
+/* line 40, ../compass/parts/project.scss */
+#action_layer {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  z-index: 1000;
 }
 
 /* Media queries */

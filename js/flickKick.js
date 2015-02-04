@@ -37,7 +37,7 @@ function flickKick(){
 		speed:180,
 		angle:50,
 		gravity:30,
-		gAngle:15,
+		gAngle:0,
 		gDir:0,
 		curFF:0
 
@@ -113,9 +113,12 @@ function flickKick(){
 
 			context.drawImage(obj.postImageObj, obj.midX-(obj.posts.postsScreenWidth/2), obj.posts.topPostsScreenY,obj.posts.postsScreenWidth,obj.posts.postsScreenHeight);
 
+			obj.getBallSteps();
+
 		};
 
-		obj.drawBall();
+		//obj.drawBall();
+		
 
 	};
 
@@ -144,25 +147,6 @@ function flickKick(){
 
 	};
 
-	this.drawBall = function(){
-
-		var ts =  obj.world.dToPosts/obj.world.flightFrames;
-		
-		var curBallLenght = obj.ballLenghtAtX(ts*obj.ball.curFF);
-		var curBallWidth = curBallLenght*obj.world.ballHfactor;
-
-		var curBallY =  obj.getTradScreenV(ts*obj.ball.curFF,obj.getBallHeightAtX(ts*obj.ball.curFF))-(curBallLenght/2);
-
-		var curBallX = obj.midX-(curBallWidth/2);
-
-		obj.tradBallImageObj.onload = function() {
-
-			context.drawImage(obj.tradBallImageObj, curBallX, curBallY,curBallWidth, curBallLenght);
-
-		};
-
-	}
-
 	this.getBallSteps = function(){
 
 		var ts =  obj.world.dToPosts/obj.world.flightFrames;
@@ -171,18 +155,73 @@ function flickKick(){
 		var curBallWidth = curBallLenght*obj.world.ballHfactor;
 
 		// get current vertical
-		var curBallV =  obj.getTradScreenV(ts*obj.ball.curFF,obj.getBallHeightAtX(ts*obj.ball.curFF))-(curBallLenght/2);
+		var curBallV =  obj.getTradScreenV(ts*obj.ball.curFF,obj.getBallHeightAtX(ts*obj.ball.curFF));
 
 		// get currnet horisontal
 
-		var curBallH = obj.getTradScreenH(ts*obj.ball.curFF) - (curBallWidth/2);
+		var curBallH = obj.getTradScreenH(ts*obj.ball.curFF);
 
-		$.logThis("cur H :> "+curBallH);
+		//$.logThis("cur H :> "+curBallH);
 		//var curBallH = obj.midX-(curBallWidth/2);
 
-		context.drawImage(obj.tradBallImageObj, curBallH, curBallV,curBallWidth, curBallLenght);
+		//context.drawImage(obj.tradBallImageObj, curBallH, curBallV,curBallWidth, curBallLenght);
+
+		obj.drawBall(curBallH, curBallV, curBallLenght);
 
 		
+
+	}
+
+	this.drawBall = function(h,v,ballL){
+
+		context.save();
+
+		context.translate(h,v);
+
+		var ballAngle = obj.ball.gAngle;
+
+		if(obj.ball.gDir > 0){
+
+			ballAngle = ballAngle*-1;
+
+		}
+
+		context.rotate(ballAngle * Math.PI/180);	
+
+		context.scale(obj.world.ballHfactor, 1);
+
+		context.beginPath();
+      	context.arc(0, 0, ballL/2, 0, 2 * Math.PI, false);	
+
+      	//context.restore();
+
+		var grd = context.createRadialGradient((ballL/2)*-0.8,(ballL/2)*-0.8, ((ballL/2)/10), 0,0, (ballL/2)*2);
+		// light blue
+		grd.addColorStop(0, '#eee');
+
+		// dark blue
+		grd.addColorStop(1, '#666');
+		//grd.addColorStop(1, '#000');
+
+		//context.fillStyle = '#ddd';
+		context.fillStyle = grd;
+		context.fill();
+		context.lineWidth = 1;
+		context.strokeStyle = '#999';
+		context.stroke();
+
+		//context.translate(h,v);
+		//context.rotate(ballAngle * Math.PI/180);
+		context.scale(obj.world.ballHfactor, 1);
+
+		//context.restore();
+
+		context.beginPath();
+		context.moveTo(0, 0-(ballL/2));
+		context.lineTo(0, 0+(ballL/2));
+		context.stroke();
+
+		context.restore();
 
 	}
 
@@ -264,13 +303,67 @@ function flickKick(){
 
 	};
 
-	this.launchKick = function(){
+	this.launchKick = function(ev){
 
-		$.logThis("launch kick");
+		//$.logThis("launch kick");
 	
 		if(obj.paused){
 
 			obj.paused = false;
+
+			var velocityFactor;
+
+		    obj.ball.gDir = 0;
+		    var gestureAngle = 0;
+
+		    if(ev.angle < 0){
+		    	gestureAngle = ev.angle*-1;
+			}else{
+				 gestureAngle = ev.angle;
+			}
+
+			if(gestureAngle > 90){
+
+				gestureAngle = gestureAngle-90;
+				obj.ball.gDir = 1;
+
+			}else{
+				gestureAngle = 90-gestureAngle;
+			} 
+
+			$.logThis("gesture angle :> "+gestureAngle);
+
+			/*if(gestureAngle < 78){
+				gestureAngle = 78;
+			}*/
+
+			obj.ball.gAngle = gestureAngle;
+
+		    /**if(ev.velocity < 0){
+
+		    	velocityFactor = ev.velocity*-1;
+
+		    }else{
+
+		    	velocityFactor = ev.velocity;
+		    }
+
+		    if (velocityFactor < 2.5){
+
+		    	velocityFactor = 2.5;
+
+		    }else if(velocityFactor > 3.8){
+
+		    	velocityFactor = 3.8;
+
+		    }
+
+		    obj.ball.speed = Number(velocityFactor)*factor;
+
+		    getTrad();*/
+
+		   //tracePath();
+
 			obj.gameLoop();
 			
 		}
