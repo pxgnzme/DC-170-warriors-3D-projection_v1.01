@@ -8,10 +8,14 @@ var postsHeight = 500;
 var postsHFactor = postsWidth/postsHeight;
 var postsWFactor = postsHeight/postsWidth;
 
-var myElement = document.getElementById('action_layer');
-var mc = new Hammer(myElement);
+var myElement,mc;
+
+//makeFullscreen();
 
 $(document).ready(function(){
+
+	myElement = document.getElementById('action_layer');
+	mc = new Hammer(myElement);
 
 	winWidth = $(window).innerWidth();
 	winHeight = $(window).innerHeight();
@@ -103,7 +107,24 @@ function getUniqueTime() {
 
 // resize event
 
+//Make full screen
 
+function makeFullscreen(){
+
+	window.addEventListener("load", function(){ 
+       if(document.height <= window.outerHeight)
+       {
+           document.body.style.height = (window.outerHeight + 50) + 'px';
+           setTimeout( function(){ window.scrollTo(0, 1); }, 50 );
+       }
+       else
+       {
+           setTimeout( function(){ window.scrollTo(0, 50); }, 0 );
+       }
+   }
+   );
+
+}
 
 
 // CONSOLE LOG FUNCTION ---------------------------------------------

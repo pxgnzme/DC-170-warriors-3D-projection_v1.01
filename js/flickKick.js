@@ -26,7 +26,8 @@ function flickKick(){
 		dSceenToBall:15,
 		balllength:15,
 		ballWidth:10,
-		flightFrames:40
+		flightFrames:40,
+		vfactor:60
 
 	};
 
@@ -39,7 +40,8 @@ function flickKick(){
 		gravity:30,
 		gAngle:0,
 		gDir:0,
-		curFF:0
+		curFF:0,
+		state:0
 
 	};
 
@@ -140,6 +142,7 @@ function flickKick(){
 		}else{
 
 			obj.ball.curFF = 0;
+			obj.ball.state = 0;
 			obj.getBallSteps();
 			obj.paused = true;
 
@@ -174,6 +177,8 @@ function flickKick(){
 
 	this.drawBall = function(h,v,ballL){
 
+		var curState;
+
 		context.save();
 
 		context.translate(h,v);
@@ -188,7 +193,21 @@ function flickKick(){
 
 		context.rotate(ballAngle * Math.PI/180);	
 
-		context.scale(obj.world.ballHfactor, 1);
+		if(obj.ball.state > 0){
+
+			curState = 0.7;
+			obj.ball.state = 0;
+
+		}else{
+
+			curState = 1;
+			obj.ball.state = 1;
+
+		}
+
+		context.scale(obj.world.ballHfactor, curState);
+
+		
 
 		context.beginPath();
       	context.arc(0, 0, ballL/2, 0, 2 * Math.PI, false);	
@@ -212,7 +231,7 @@ function flickKick(){
 
 		//context.translate(h,v);
 		//context.rotate(ballAngle * Math.PI/180);
-		context.scale(obj.world.ballHfactor, 1);
+		//context.scale(obj.world.ballHfactor, 0.7);
 
 		//context.restore();
 
@@ -333,13 +352,13 @@ function flickKick(){
 
 			$.logThis("gesture angle :> "+gestureAngle);
 
-			/*if(gestureAngle < 78){
-				gestureAngle = 78;
-			}*/
+			if(gestureAngle > 35){
+				gestureAngle = 35;
+			}
 
 			obj.ball.gAngle = gestureAngle;
 
-		    /**if(ev.velocity < 0){
+		    if(ev.velocity < 0){
 
 		    	velocityFactor = ev.velocity*-1;
 
@@ -358,9 +377,8 @@ function flickKick(){
 
 		    }
 
-		    obj.ball.speed = Number(velocityFactor)*factor;
+		    obj.ball.speed = Number(velocityFactor)*obj.world.vfactor;
 
-		    getTrad();*/
 
 		   //tracePath();
 

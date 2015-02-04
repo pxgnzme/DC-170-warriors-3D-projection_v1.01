@@ -17,6 +17,11 @@
     <script src="js/vendor/modernizr.js"></script>
     <script src="http://code.jquery.com/jquery-1.10.2.js"></script>
 
+    
+<!--[if IE]>
+  <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+<![endif]-->
+
   </head>
 
   <body>
@@ -27,7 +32,7 @@
 
     <!--  JAVASCRIPT -->
     <script src="http://hammerjs.github.io/dist/hammer.js"></script>
-    <script src="js/custom.js?1"></script>
+    <script src="js/custom.js?2"></script>
     <script src="js/flickKick.js?1"></script>
     <!-- -->
 
