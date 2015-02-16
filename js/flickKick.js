@@ -4,48 +4,65 @@ AUTHOR: FRAZER CAMERON @pixelgiantnz NZME
 VERSION 1.01
 */
 
+var kickDisabled = false;
+
 var canvas,context;
 
 function flickKick(){
 
 	var obj = this;
 
-	this.paused = true;
+	//this.paused = true;
+	this.inflight = false;
 
 	this.world = {
 
-		postHeight:500,
+		postHeight:600,
+		postThick:10,
 		barheight:200,
-		postWidth:250,
+		postWidth:300,
 		dToPosts:700,
 		cameraHeight:30,
-		fovAddedMaxHtAtPosts:200,
+		fovAddedMaxHtAtPosts:100,
 		gravity:30,
 		pitchAngle:60,
 		dToScreen:30,
-		dSceenToBall:15,
+		dSceenToBall:20,
 		balllength:15,
 		ballWidth:10,
 		flightFrames:40,
-		vfactor:60
+		vfactor:60,
+		windFactor:0
 
 	};
-
-	this.tradBallImageObj = new Image();
 
 	this.ball = {
 
 		speed:180,
-		angle:50,
+		angle:45,
 		gravity:30,
 		gAngle:0,
 		gDir:0,
 		curFF:0,
-		state:0
+		state:0,
+		curX:0,
+		curY:0,
+		teebase:0,
+		hitV:false,
+		hitH:false,
+		postHitW:0
 
 	};
 
-	this.postImageObj = new Image();
+	this.indicator = {
+		x:0,
+		y:0,
+		totalFrames:10,
+		alive:false,
+		mode:0,
+		curFrame:0,
+		radius:10
+	}
 
 	this.posts = {
 
@@ -63,8 +80,8 @@ function flickKick(){
 		obj.worldHeight = obj.canvasheight;
 		obj.worldWidth = obj.worldHeight;
 
-		obj.postImageObj.src = 'img/posts.png';
-		obj.tradBallImageObj.src = 'img/ball_default.png';
+		//obj.postImageObj.src = 'img/posts.png';
+		//obj.tradBallImageObj.src = 'img/ball_default.png';
 
 		$.logThis("Create game : width :> "+w+" :: height :> "+ht);
 
@@ -95,6 +112,43 @@ function flickKick(){
 
 	this.drawWorld = function(){
 
+		obj.drawPosts();
+
+		obj.getBallSteps(1);
+
+	};
+
+	this.drawTee = function(){
+
+		context.save();
+
+		context.translate(obj.midX,obj.ball.teebase);
+
+		context.beginPath();
+
+		context.moveTo(obj.ball.teeWidth*-1, 0);
+      	context.lineTo(0, obj.ball.teeWidth*-1);
+      	context.lineTo(obj.ball.teeWidth, 0);
+
+      	context.quadraticCurveTo(0, 30, obj.ball.teeWidth*-1, 0);
+      	//context.lineTo(-50, 0);
+      	context.lineJoin = 'round';
+      	context.fillStyle = '#fff568';
+	    context.fill();
+
+	    context.clip();
+
+	    context.beginPath();
+	    context.arc(0, obj.ball.teeWidth*-1, obj.ball.teeWidth/1.5, 0, 2 * Math.PI, false);
+	    context.fillStyle = '#d6ce57';
+	    context.fill();
+
+      	context.restore();
+
+	};
+
+	this.drawPosts = function(){
+
 		var cameraToPosts = obj.world.dToPosts + obj.world.dSceenToBall + obj.world.dToScreen;
 
 		var heightOfFovAtPosts = Math.tan(obj.world.fov * Math.PI/180)*cameraToPosts;
@@ -103,30 +157,110 @@ function flickKick(){
 
 		obj.posts.topPostsScreenY = (obj.worldHeight/2) - ((obj.worldHeight/2)*topPostsProjY);
 
-		var bottomPostsProY = obj.world.cameraHeight/heightOfFovAtPosts;
+		obj.posts.postsScreenHeight = (obj.world.postHeight/heightOfFovAtPosts)*(obj.worldHeight/2);
 
-		var bottomPostsScreenY = (obj.worldHeight/2) + ((obj.worldHeight/2)*bottomPostsProY);
+		obj.posts.postsScreenWidth = (obj.world.postWidth/heightOfFovAtPosts)*(obj.worldHeight/2);
 
-		obj.posts.postsScreenHeight = bottomPostsScreenY-obj.posts.topPostsScreenY;
+		obj.posts.thickness = (obj.world.postThick/heightOfFovAtPosts)*(obj.worldHeight/2);
 
-		obj.posts.postsScreenWidth = obj.posts.postsScreenHeight * postsHFactor;
+		obj.posts.crossBarHeight = (obj.world.barheight/heightOfFovAtPosts)*(obj.worldHeight/2);
 
-		obj.postImageObj.onload = function() {
+		obj.ball.postHitW = obj.posts.postsScreenWidth/2;
 
-			context.drawImage(obj.postImageObj, obj.midX-(obj.posts.postsScreenWidth/2), obj.posts.topPostsScreenY,obj.posts.postsScreenWidth,obj.posts.postsScreenHeight);
 
-			obj.getBallSteps();
+		context.save();
+		context.translate(obj.midX,obj.posts.topPostsScreenY);
 
-		};
+		context.beginPath();
+	    context.rect((obj.ball.postHitW+obj.posts.thickness)*-1, 0, obj.posts.thickness, obj.posts.postsScreenHeight);
 
-		//obj.drawBall();
-		
+		var grd1 = context.createLinearGradient((obj.ball.postHitW+obj.posts.thickness)*-1, 0, obj.ball.postHitW*-1, 0);
+	    // light blue
+	    grd1.addColorStop(0, '#AAA');   
+	    // dark blue
+	    grd1.addColorStop(1, '#FFF');
+	
+		context.fillStyle = grd1;
+
+	    //context.fillStyle = 'yellow';
+	    context.fill();
+
+	    context.beginPath();
+
+	    context.rect(obj.ball.postHitW, 0, obj.posts.thickness, obj.posts.postsScreenHeight);
+	    
+		var grd2 = context.createLinearGradient(obj.ball.postHitW, 0, obj.ball.postHitW+obj.posts.thickness, 0);
+	    // light blue
+	    grd2.addColorStop(1, '#FFF');
+
+	    grd2.addColorStop(0, '#AAA');   
+	    // dark blue
+	    
+	
+		context.fillStyle = grd2;
+
+	    context.fill();
+
+	    context.beginPath();
+
+	    context.rect(obj.ball.postHitW*-1, obj.posts.postsScreenHeight - obj.posts.crossBarHeight, obj.posts.postsScreenWidth, obj.posts.thickness);
+	    
+	    var grd3 = context.createLinearGradient(0, obj.posts.postsScreenHeight - obj.posts.crossBarHeight, 0, (obj.posts.postsScreenHeight - obj.posts.crossBarHeight)+obj.posts.thickness);
+	    // light blue
+	    grd3.addColorStop(0, '#FFF');   
+	    // dark blue
+	    grd3.addColorStop(1, '#AAA');
+	
+		context.fillStyle = grd3;
+
+	    context.fill();
+
+		//pads
+	    
+	    context.beginPath();
+
+	    context.rect((obj.ball.postHitW+(obj.posts.thickness*2))*-1, obj.posts.postsScreenHeight-(obj.posts.crossBarHeight*0.65), obj.posts.thickness*3, obj.posts.crossBarHeight*0.65);
+
+	    //context.rect(188, 50, 200, 100);
+
+		var grd4 = context.createLinearGradient((obj.ball.postHitW+(obj.posts.thickness*2))*-1, 0, (obj.ball.postHitW-obj.posts.thickness)*-1, 0);
+	    // light blue
+	    grd4.addColorStop(0, '#910000');   
+	    // dark blue
+	    grd4.addColorStop(0.5, '#de0303');
+	
+		context.fillStyle = grd4;
+
+	    //context.fillStyle = 'red';
+	    context.fill();
+
+	    context.beginPath();
+
+	    context.rect(obj.ball.postHitW-obj.posts.thickness, obj.posts.postsScreenHeight-(obj.posts.crossBarHeight*0.65), obj.posts.thickness*3, obj.posts.crossBarHeight*0.65);
+
+	    //context.rect(188, 50, 200, 100);
+
+		var grd5 = context.createLinearGradient(obj.ball.postHitW-obj.posts.thickness, 0, obj.ball.postHitW+(obj.posts.thickness*2), 0);
+	    // light blue
+	    grd5.addColorStop(0, '#910000');   
+	    // dark blue
+	    grd5.addColorStop(0.5, '#de0303');
+	
+		context.fillStyle = grd5;
+
+	    //context.fillStyle = 'red';
+	    context.fill();
+
+	    context.restore();
 
 	};
 
 	this.refreshWorld = function(){
 
-		context.drawImage(obj.postImageObj, obj.midX-(obj.posts.postsScreenWidth/2), obj.posts.topPostsScreenY,obj.posts.postsScreenWidth,obj.posts.postsScreenHeight);
+		
+		obj.drawPosts();
+
+		obj.drawTee();
 
 		obj.getBallTrad();
 
@@ -134,23 +268,75 @@ function flickKick(){
 
 	this.getBallTrad = function(){
 
+		
+
 		if(obj.ball.curFF < obj.world.flightFrames){
 		
-			obj.getBallSteps();
+			//obj.inflight = true;
+			obj.getBallSteps(1);
 			obj.ball.curFF++;
 
 		}else{
 
+			var ts =  obj.world.dToPosts/obj.world.flightFrames;
+
+			$.logThis(obj.ball.curFF*ts);
+
+			obj.indicator.x = obj.ball.curX;
+			obj.indicator.y = obj.ball.curY;
+
+			obj.ball.hitV = obj.hitV();
+			obj.ball.hitH = obj.hitH();
+
 			obj.ball.curFF = 0;
 			obj.ball.state = 0;
-			obj.getBallSteps();
-			obj.paused = true;
+			obj.getBallSteps(0);
+			//obj.showIndicator();
 
 		}
 
 	};
 
-	this.getBallSteps = function(){
+	this.hitV = function(){
+
+		if (obj.getBallHeightAtX(obj.world.dToPosts) > obj.world.barheight){
+
+			return true;
+
+		}else{
+
+			return false;
+
+		}
+
+	};
+
+	this.hitH = function(){
+
+		$.logThis("obj.ball.obj.postHitW :> "+obj.ball.postHitW+" :: WidthAtD :> "+obj.getBallWidthAtD(obj.world.dToPosts));
+
+		//var cameraToPosts = obj.world.dToPosts + obj.world.dSceenToBall + obj.world.dToScreen;
+
+		//var heightOfFovAtPosts = Math.tan(obj.world.fov * Math.PI/180)*cameraToPosts;
+
+		//obj.posts.postsScreenWidth = (obj.world.postWidth/heightOfFovAtPosts)*(obj.worldHeight/2);
+
+		if(obj.getBallWidthAtD(obj.world.dToPosts) < obj.ball.postHitW){
+
+			return true;
+
+		}else{
+
+			return false;
+		}
+
+		
+
+	};
+
+	
+
+	this.getBallSteps = function(mode){
 
 		var ts =  obj.world.dToPosts/obj.world.flightFrames;
 		
@@ -164,12 +350,30 @@ function flickKick(){
 
 		var curBallH = obj.getTradScreenH(ts*obj.ball.curFF);
 
+		obj.ball.curX = curBallH;
+		obj.ball.curY = curBallV;
+
+		if(!obj.inflight){
+
+			obj.ball.teebase = (curBallV + (curBallLenght/2));
+			obj.ball.teeWidth = (curBallLenght/2)/2;
+		
+		}
+
+		obj.drawTee();
+
+		//$.logThis("drawIndicator @ "+obj.ball.curX+"/"+obj.ball.curY);
+
 		//$.logThis("cur H :> "+curBallH);
 		//var curBallH = obj.midX-(curBallWidth/2);
 
 		//context.drawImage(obj.tradBallImageObj, curBallH, curBallV,curBallWidth, curBallLenght);
 
 		obj.drawBall(curBallH, curBallV, curBallLenght);
+
+		if(mode == 0){
+			obj.inflight = false;
+		}
 
 		
 
@@ -242,6 +446,65 @@ function flickKick(){
 
 		context.restore();
 
+	};
+
+	this.showIndicator = function(){
+
+		//$.logThis("show indicator");
+
+		obj.drawIndicator();
+
+		kickDisabled = false;
+
+		/*if(obj.indicator.curFrame < obj.indicator.totalFrames){
+
+			obj.indicator.mode = 1;
+
+			obj.indicator.curFrame ++;
+
+			obj.drawIndicator();
+
+			var indicatorInterval = setTimeout(obj.showIndicator(), 1000 / 30);
+
+		}else{
+
+			obj.indicator.mode = 0;
+			obj.indicator.curFrame = 0;
+			//obj.inflight = false;
+
+		}*/
+		
+
+	};
+
+	this.drawIndicator = function(){
+
+		
+
+		//obj.ball.curX;
+		//obj.ball.curY;
+
+		//$.logThis("drawIndicator @ "+obj.indicator.x+"/"+obj.indicator.y);
+
+		context.beginPath();
+      	context.arc(obj.indicator.x, obj.indicator.y, obj.indicator.radius, 0, 2 * Math.PI, false);	
+
+      	context.lineWidth = 2;
+
+      	if(obj.ball.hitV && obj.ball.hitH) {
+
+			context.strokeStyle = 'green';
+
+		}else{
+
+			context.strokeStyle = 'red';
+
+		}
+		context.stroke();
+
+		obj.ball.hitV = false;
+		obj.ball.hitH = false;
+
 	}
 
 	this.getBallHeightAtX = function(x){
@@ -257,6 +520,8 @@ function flickKick(){
 		return hAtX;
 
 	};
+
+
 
 	this.getTradScreenV = function(d,ht){
 
@@ -286,6 +551,8 @@ function flickKick(){
 
 		var cameraToBall = d + obj.world.dToScreen + obj.world.dSceenToBall;
 
+		var wind = obj.world.windFactor*obj.ball.curFF;
+
 		var hX = Math.tan(obj.ball.gAngle * Math.PI/180)*d;
 
 		var widthOfFovAtBall = Math.tan(obj.world.fov * Math.PI/180)*cameraToBall;
@@ -304,7 +571,29 @@ function flickKick(){
 
 		}
 
-		return ballScreenH;
+		return ballScreenH+wind;
+
+	};
+
+	this.getBallWidthAtD = function(d){
+
+		//var cameraToBall = d + obj.world.dToScreen + obj.world.dSceenToBall;
+
+		var cameraToPosts = obj.world.dToPosts + obj.world.dSceenToBall + obj.world.dToScreen;
+
+		var heightOfFovAtPosts = Math.tan(obj.world.fov * Math.PI/180)*cameraToPosts;
+
+		//obj.posts.postsScreenWidth = (obj.world.postWidth/heightOfFovAtPosts)*(obj.worldHeight/2);
+
+		var hAtD = Math.tan(obj.ball.gAngle * Math.PI/180)*d;
+
+		var dDiff = (hAtD/heightOfFovAtPosts)*(obj.worldHeight/2);
+
+
+
+		//$.logThis("hAtD :> "+hAtD+" :: obj.ball.gAngle:> "+obj.ball.gAngle);
+
+		return dDiff;
 
 	};
 
@@ -324,11 +613,13 @@ function flickKick(){
 
 	this.launchKick = function(ev){
 
-		//$.logThis("launch kick");
+		$.logThis("inflight at gesture :> "+obj.inflight);
 	
-		if(obj.paused){
+		if(!obj.inflight){
 
-			obj.paused = false;
+			$.logThis("launch kick :> "+obj.ball.curFF); 
+
+			obj.inflight = true; 
 
 			var velocityFactor;
 
@@ -379,11 +670,15 @@ function flickKick(){
 
 		    obj.ball.speed = Number(velocityFactor)*obj.world.vfactor;
 
-
-		   //tracePath();
+		    //tracePath();
 
 			obj.gameLoop();
+
 			
+		}else{
+
+			$.logThis("no kick ball in flight");
+
 		}
 
 	}
@@ -391,7 +686,7 @@ function flickKick(){
 	//game loop
 	this.gameLoop = function() {
 		
-		if(!obj.paused){
+		if(obj.inflight){
 			
 			obj.wipeCanvas();
 			obj.refreshWorld();
@@ -401,6 +696,8 @@ function flickKick(){
 		}else{
 
 			$.logThis("ball flight ended");
+
+			obj.showIndicator();
 
 		}
 	  

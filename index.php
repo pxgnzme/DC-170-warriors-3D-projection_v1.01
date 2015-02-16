@@ -12,7 +12,7 @@
     <title>Warriors 3D projection</title>
 
     <link rel="stylesheet" href="fonts/foundation-icons.css" />
-    <link rel="stylesheet" href="css/screen.css?1" />
+    <link rel="stylesheet" href="css/screen.css?2" />
 
     <script src="js/vendor/modernizr.js"></script>
     <script src="http://code.jquery.com/jquery-1.10.2.js"></script>
@@ -24,7 +24,15 @@
 
   </head>
 
-  <body>
+  <body id = "game">
+
+    <section id = "stage1">
+
+      <p>For the best experience save this page to your home screen</p>
+
+      <button id="start_game" class = "btn">Start Game</button>
+
+    </section>
 
     <section id = "game_container"></section>
 
