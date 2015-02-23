@@ -34,9 +34,31 @@
 
     </section>
 
+    <section id = "bg1" class = "bg"></section>
+    <section id = "bg2" class = "bg"></section>
+    <section id = "bg2" class = "bg"></section>
+
     <section id = "game_container"></section>
 
+    <section id = "game_skin">
+
+      <header>
+
+        <span class= "level-score left score_board"><i class="fi-target"></i> <span id= "score-fraction">0/0</span> <span id= "score-percent">0</span>%</span>
+        <span class= "total score_board">SCORE: <span id = "total-score"></span></span>
+        <span class= "time right score_board"><i class="fi-clock"></i> <span id= "time-secs">00</span></span>
+
+      </header>
+
+      <footer><span class= "wind right info_board">WIND <span id = "wind-strength"><i class="fi-arrow-left"></i><i class="fi-arrow-left"></i></span></span></footer>
+
+    </section>
+
+    <section id = "result_container"></section>
+
     <div id="action_layer"></div>
+
+    <div id = "endLevel"></div>
 
     <!--  JAVASCRIPT -->
     <script src="http://hammerjs.github.io/dist/hammer.js"></script>

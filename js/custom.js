@@ -23,9 +23,8 @@ $(document).ready(function(){
 
 	resizeListeners();
 
-	var bgWFactor = 14389/1216;
 
-	$('body').css("background-size", (winHeight/2)*bgWFactor+"px "+winHeight/2+"px");
+	$('body').css("background-size", "100% "+winHeight/2+"px");
 
 	$('#start_game').on('click',function(){
 

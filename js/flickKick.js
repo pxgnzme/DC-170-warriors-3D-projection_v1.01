@@ -12,6 +12,29 @@ function flickKick(){
 
 	var obj = this;
 
+	this.score = {
+
+		totalKicks:0,
+		totalOver:0,
+		curScore:0
+
+	};
+
+	this.level = {
+
+		curtime:60,
+		stage1:0.75,
+		stage2:0.85,
+		stage3:0.95,
+		stage4:1,
+		multi1:1.5,
+		multi2:2,
+		multi3:3,
+		multi4:5,
+		levelScore:0
+	
+	};
+
 	//this.paused = true;
 	this.inflight = false;
 
@@ -23,7 +46,7 @@ function flickKick(){
 		postWidth:300,
 		dToPosts:700,
 		cameraHeight:30,
-		fovAddedMaxHtAtPosts:100,
+		fovAddedMaxHtAtPosts:150,
 		gravity:30,
 		pitchAngle:60,
 		dToScreen:30,
@@ -32,7 +55,8 @@ function flickKick(){
 		ballWidth:10,
 		flightFrames:40,
 		vfactor:60,
-		windFactor:0
+		windFactor:0,
+		curView:1
 
 	};
 
@@ -61,14 +85,15 @@ function flickKick(){
 		alive:false,
 		mode:0,
 		curFrame:0,
-		radius:10
+		radius:2
 	}
 
 	this.posts = {
 
 		postsScreenWidth:0,
 		topPostsScreenY:0,
-		postsScreenHeight:0
+		postsScreenHeight:0,
+		sidePost:0.75
 
 	};
 	
@@ -80,10 +105,7 @@ function flickKick(){
 		obj.worldHeight = obj.canvasheight;
 		obj.worldWidth = obj.worldHeight;
 
-		//obj.postImageObj.src = 'img/posts.png';
-		//obj.tradBallImageObj.src = 'img/ball_default.png';
-
-		$.logThis("Create game : width :> "+w+" :: height :> "+ht);
+		$.logThis("Create game : width :> "+w+" :: height :> "+ht+" world width :> "+obj.worldWidth);
 
 		$('#game_container').html("<canvas width='"+w+"' height = '"+ht+"' id = 'game_stage'/>");
 
@@ -99,6 +121,14 @@ function flickKick(){
 		context = canvas.getContext('2d');
 
 		obj.drawWorld();
+
+		obj.runTimer();
+
+		var bgWFactor = 14389/1216;
+
+		$('#bg'+obj.world.curView).show();
+
+		$('.bg').css("background-size", (winHeight/2)*bgWFactor+"px "+winHeight/2+"px");
 
 
 	};
@@ -159,7 +189,11 @@ function flickKick(){
 
 		obj.posts.postsScreenHeight = (obj.world.postHeight/heightOfFovAtPosts)*(obj.worldHeight/2);
 
+		if(obj.world.curView == 1){
 		obj.posts.postsScreenWidth = (obj.world.postWidth/heightOfFovAtPosts)*(obj.worldHeight/2);
+		}else{
+			obj.posts.postsScreenWidth = ((obj.world.postWidth*obj.posts.sidePost)/heightOfFovAtPosts)*(obj.worldHeight/2)
+		}
 
 		obj.posts.thickness = (obj.world.postThick/heightOfFovAtPosts)*(obj.worldHeight/2);
 
@@ -167,6 +201,7 @@ function flickKick(){
 
 		obj.ball.postHitW = obj.posts.postsScreenWidth/2;
 
+		obj.ball.leftPost = obj.midX-obj.ball.postHitW;
 
 		context.save();
 		context.translate(obj.midX,obj.posts.topPostsScreenY);
@@ -182,7 +217,6 @@ function flickKick(){
 	
 		context.fillStyle = grd1;
 
-	    //context.fillStyle = 'yellow';
 	    context.fill();
 
 	    context.beginPath();
@@ -221,8 +255,6 @@ function flickKick(){
 
 	    context.rect((obj.ball.postHitW+(obj.posts.thickness*2))*-1, obj.posts.postsScreenHeight-(obj.posts.crossBarHeight*0.65), obj.posts.thickness*3, obj.posts.crossBarHeight*0.65);
 
-	    //context.rect(188, 50, 200, 100);
-
 		var grd4 = context.createLinearGradient((obj.ball.postHitW+(obj.posts.thickness*2))*-1, 0, (obj.ball.postHitW-obj.posts.thickness)*-1, 0);
 	    // light blue
 	    grd4.addColorStop(0, '#910000');   
@@ -231,14 +263,11 @@ function flickKick(){
 	
 		context.fillStyle = grd4;
 
-	    //context.fillStyle = 'red';
 	    context.fill();
 
 	    context.beginPath();
 
 	    context.rect(obj.ball.postHitW-obj.posts.thickness, obj.posts.postsScreenHeight-(obj.posts.crossBarHeight*0.65), obj.posts.thickness*3, obj.posts.crossBarHeight*0.65);
-
-	    //context.rect(188, 50, 200, 100);
 
 		var grd5 = context.createLinearGradient(obj.ball.postHitW-obj.posts.thickness, 0, obj.ball.postHitW+(obj.posts.thickness*2), 0);
 	    // light blue
@@ -248,7 +277,6 @@ function flickKick(){
 	
 		context.fillStyle = grd5;
 
-	    //context.fillStyle = 'red';
 	    context.fill();
 
 	    context.restore();
@@ -272,7 +300,6 @@ function flickKick(){
 
 		if(obj.ball.curFF < obj.world.flightFrames){
 		
-			//obj.inflight = true;
 			obj.getBallSteps(1);
 			obj.ball.curFF++;
 
@@ -291,13 +318,14 @@ function flickKick(){
 			obj.ball.curFF = 0;
 			obj.ball.state = 0;
 			obj.getBallSteps(0);
-			//obj.showIndicator();
 
 		}
 
 	};
 
 	this.hitV = function(){
+
+		//return true;
 
 		if (obj.getBallHeightAtX(obj.world.dToPosts) > obj.world.barheight){
 
@@ -313,24 +341,17 @@ function flickKick(){
 
 	this.hitH = function(){
 
-		$.logThis("obj.ball.obj.postHitW :> "+obj.ball.postHitW+" :: WidthAtD :> "+obj.getBallWidthAtD(obj.world.dToPosts));
 
-		//var cameraToPosts = obj.world.dToPosts + obj.world.dSceenToBall + obj.world.dToScreen;
-
-		//var heightOfFovAtPosts = Math.tan(obj.world.fov * Math.PI/180)*cameraToPosts;
-
-		//obj.posts.postsScreenWidth = (obj.world.postWidth/heightOfFovAtPosts)*(obj.worldHeight/2);
-
-		if(obj.getBallWidthAtD(obj.world.dToPosts) < obj.ball.postHitW){
+		if((obj.midX - obj.ball.postHitW) < obj.indicator.x && (obj.midX + obj.ball.postHitW) > obj.indicator.x){
 
 			return true;
 
 		}else{
 
 			return false;
-		}
 
-		
+		};
+
 
 	};
 
@@ -362,18 +383,13 @@ function flickKick(){
 
 		obj.drawTee();
 
-		//$.logThis("drawIndicator @ "+obj.ball.curX+"/"+obj.ball.curY);
-
-		//$.logThis("cur H :> "+curBallH);
-		//var curBallH = obj.midX-(curBallWidth/2);
-
-		//context.drawImage(obj.tradBallImageObj, curBallH, curBallV,curBallWidth, curBallLenght);
-
 		obj.drawBall(curBallH, curBallV, curBallLenght);
 
 		if(mode == 0){
 			obj.inflight = false;
 		}
+
+
 
 		
 
@@ -409,14 +425,10 @@ function flickKick(){
 
 		}
 
-		context.scale(obj.world.ballHfactor, curState);
-
-		
+		context.scale(obj.world.ballHfactor, curState);	
 
 		context.beginPath();
       	context.arc(0, 0, ballL/2, 0, 2 * Math.PI, false);	
-
-      	//context.restore();
 
 		var grd = context.createRadialGradient((ballL/2)*-0.8,(ballL/2)*-0.8, ((ballL/2)/10), 0,0, (ballL/2)*2);
 		// light blue
@@ -424,20 +436,13 @@ function flickKick(){
 
 		// dark blue
 		grd.addColorStop(1, '#666');
-		//grd.addColorStop(1, '#000');
-
-		//context.fillStyle = '#ddd';
+		
 		context.fillStyle = grd;
 		context.fill();
 		context.lineWidth = 1;
 		context.strokeStyle = '#999';
 		context.stroke();
 
-		//context.translate(h,v);
-		//context.rotate(ballAngle * Math.PI/180);
-		//context.scale(obj.world.ballHfactor, 0.7);
-
-		//context.restore();
 
 		context.beginPath();
 		context.moveTo(0, 0-(ballL/2));
@@ -449,8 +454,6 @@ function flickKick(){
 	};
 
 	this.showIndicator = function(){
-
-		//$.logThis("show indicator");
 
 		obj.drawIndicator();
 
@@ -479,33 +482,93 @@ function flickKick(){
 
 	this.drawIndicator = function(){
 
-		
 
-		//obj.ball.curX;
-		//obj.ball.curY;
+		$.logThis("drawIndicator @ "+obj.indicator.x+"/"+obj.indicator.y);
 
-		//$.logThis("drawIndicator @ "+obj.indicator.x+"/"+obj.indicator.y);
+		var indicatorColor = 'red'
 
-		context.beginPath();
-      	context.arc(obj.indicator.x, obj.indicator.y, obj.indicator.radius, 0, 2 * Math.PI, false);	
+		if(obj.ball.hitV && obj.ball.hitH) {
 
-      	context.lineWidth = 2;
+			indicatorColor = 'white';
 
-      	if(obj.ball.hitV && obj.ball.hitH) {
+			context.beginPath();
+	      	context.arc(obj.indicator.x, obj.indicator.y, obj.indicator.radius, 0, 2 * Math.PI, false);	
+	      	context.strokeStyle = indicatorColor;
+	      	context.lineWidth = 2;
+	      	context.fillStyle = indicatorColor;
+		    context.fill();
+	      	context.stroke();
+	      	
 
-			context.strokeStyle = 'green';
+	      	context.beginPath();
+	      	context.arc(obj.indicator.x, obj.indicator.y, obj.indicator.radius*4, 0, 2 * Math.PI, false);
+	      	context.strokeStyle = indicatorColor;
+	      	context.lineWidth = 4;
+	      	context.stroke();
+
+	      	context.beginPath();
+	      	context.arc(obj.indicator.x, obj.indicator.y, obj.indicator.radius*8, 0, 2 * Math.PI, false);
+	      	context.lineWidth = 8;
+	      	context.strokeStyle = indicatorColor;
+	      	context.stroke();	
 
 		}else{
 
-			context.strokeStyle = 'red';
+			context.beginPath();
+			context.moveTo(obj.indicator.x-(obj.indicator.radius*8), obj.indicator.y-(obj.indicator.radius*8));
+			context.lineTo(obj.indicator.x+(obj.indicator.radius*8), obj.indicator.y+(obj.indicator.radius*8));
+			context.lineWidth = 8;
+	      	context.strokeStyle = indicatorColor;
+			context.stroke();
+
+			context.beginPath();
+			context.moveTo(obj.indicator.x-(obj.indicator.radius*8), obj.indicator.y
+				+(obj.indicator.radius*8));
+			context.lineTo(obj.indicator.x+(obj.indicator.radius*8), obj.indicator.y-(obj.indicator.radius*8));
+			context.lineWidth = 8;
+	      	context.strokeStyle = indicatorColor;
+			context.stroke();
 
 		}
-		context.stroke();
+
+		obj.kickResult();
 
 		obj.ball.hitV = false;
 		obj.ball.hitH = false;
 
+		
+
 	}
+
+	this.kickResult = function(){
+
+		obj.score.totalKicks ++;
+
+		var resTxt = "MISS!";
+
+		if(obj.ball.hitV && obj.ball.hitH){
+
+			resTxt = "GOAL!";
+
+			obj.score.totalOver ++;
+
+		}
+
+		$('#result_container').html("<h2>"+resTxt+"</h2>");
+
+		$("#result_container").fadeIn(200,function(){
+
+			$("#result_container").delay(500).fadeOut(200);
+
+		});
+
+		$("#score-fraction").html(obj.score.totalOver+"/"+obj.score.totalKicks);
+
+		var hitPercent = Math.ceil((obj.score.totalOver/obj.score.totalKicks)*100);
+
+		$('#score-percent').html(""+hitPercent+"");
+
+	};
 
 	this.getBallHeightAtX = function(x){
 
@@ -551,6 +614,8 @@ function flickKick(){
 
 		var cameraToBall = d + obj.world.dToScreen + obj.world.dSceenToBall;
 
+		//var cameraToBall = d;
+
 		var wind = obj.world.windFactor*obj.ball.curFF;
 
 		var hX = Math.tan(obj.ball.gAngle * Math.PI/180)*d;
@@ -575,27 +640,6 @@ function flickKick(){
 
 	};
 
-	this.getBallWidthAtD = function(d){
-
-		//var cameraToBall = d + obj.world.dToScreen + obj.world.dSceenToBall;
-
-		var cameraToPosts = obj.world.dToPosts + obj.world.dSceenToBall + obj.world.dToScreen;
-
-		var heightOfFovAtPosts = Math.tan(obj.world.fov * Math.PI/180)*cameraToPosts;
-
-		//obj.posts.postsScreenWidth = (obj.world.postWidth/heightOfFovAtPosts)*(obj.worldHeight/2);
-
-		var hAtD = Math.tan(obj.ball.gAngle * Math.PI/180)*d;
-
-		var dDiff = (hAtD/heightOfFovAtPosts)*(obj.worldHeight/2);
-
-
-
-		//$.logThis("hAtD :> "+hAtD+" :: obj.ball.gAngle:> "+obj.ball.gAngle);
-
-		return dDiff;
-
-	};
 
 	this.ballLenghtAtX = function(d){
 
@@ -643,8 +687,8 @@ function flickKick(){
 
 			$.logThis("gesture angle :> "+gestureAngle);
 
-			if(gestureAngle > 35){
-				gestureAngle = 35;
+			if(gestureAngle > 50){
+				gestureAngle = 50;
 			}
 
 			obj.ball.gAngle = gestureAngle;
@@ -682,6 +726,135 @@ function flickKick(){
 		}
 
 	}
+
+	this.runTimer = function(){
+
+		$.logThis("run timer");
+
+		$('#time-secs').html(obj.level.curtime);
+
+		var timer = setTimeout(function(){
+
+			obj.updateTime();
+
+		},1000);
+
+	}
+
+	this.updateTime = function(){
+
+		//$.logThis(obj.level.curtime);
+
+		obj.level.curtime--;
+
+		if(obj.level.curtime > 0){
+
+			$('#time-secs').html(obj.level.curtime);
+
+	      	obj.runTimer(obj.level.curtime);
+	    
+		}else{
+
+			$('#time-secs').html("END");
+
+			var scoreFraction = obj.score.totalOver/obj.score.totalKicks;
+
+			var hitPercent = Math.ceil(scoreFraction*100);
+
+			var multiplier = "0";
+
+			if(scoreFraction >= obj.level.stage1 && scoreFraction < obj.level.stage2){
+
+				multiplier = obj.level.multi1;
+
+				obj.level.levelScore = obj.score.totalOver * obj.level.multi1;
+
+			}else if(scoreFraction >= obj.level.stage2 && scoreFraction < obj.level.stage3){
+
+				multiplier = obj.level.multi2;
+
+				obj.level.levelScore = obj.score.totalOver * obj.level.multi2;
+
+			}else if(scoreFraction >= obj.level.stage3 && scoreFraction < obj.level.stage4){
+
+				multiplier = obj.level.multi3;
+
+				obj.level.levelScore = obj.score.totalOver * obj.level.multi3;
+
+			}else if(scoreFraction == obj.level.stage4){
+
+				multiplier = obj.level.multi4;
+
+				obj.level.levelScore = obj.score.totalOver * obj.level.multi4;
+
+			}else{
+
+				obj.level.levelScore = obj.score.totalOver;
+
+			}
+
+			obj.score.curScore += obj.level.levelScore;
+
+			$("#total-score").html(""+obj.score.curScore+"");
+
+			$(".total").show();
+
+			$("#endLevel").show().html("<h2>NICE!</h2><p>You got : "+obj.score.totalOver+"/"+obj.score.totalKicks+"<br />@ "+hitPercent+"%<br />x "+multiplier+"<br />Level score: "+obj.level.levelScore+"<br />Total score: "+obj.score.curScore+"</p><button class ='next_btn'>Continue >></button>");
+
+
+			$('.next_btn').on('click',function(){
+
+				if(obj.world.curView == 1){
+
+					obj.world.curView = 2;
+
+				}else{
+
+					obj.world.curView = 1;
+
+				}
+
+				obj.resetLevel();
+
+			});
+
+
+		}
+
+		
+
+	}
+
+	this.resetLevel = function(){
+
+		obj.level.levelScore = 0;
+		obj.level.curtime = 60;
+		obj.score.totalOver = 0;
+		obj.score.totalKicks = 0;
+		obj.ball.curFF = 0;
+		obj.ball.state = 0;
+
+		$('.bg').hide();
+		$('#bg'+obj.world.curView).show();
+
+		$("#endLevel").html("").hide();
+
+		//$('#time-secs').html(obj.level.curtime);
+
+		$("#score-fraction").html(obj.score.totalOver+"/"+obj.score.totalKicks);
+
+		var hitPercent = Math.ceil((obj.score.totalOver/obj.score.totalKicks)*100);
+
+		$('#score-percent').html(""+hitPercent+"");
+
+		obj.runTimer();
+
+		obj.wipeCanvas();
+
+		obj.drawWorld();
+
+
+	};
 
 	//game loop
 	this.gameLoop = function() {
