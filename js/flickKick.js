@@ -23,13 +23,13 @@ function flickKick(){
 	this.level = {
 
 		curtime:60,
-		stage1:0.75,
-		stage2:0.85,
-		stage3:0.95,
+		stage1:0.70,
+		stage2:0.80,
+		stage3:0.90,
 		stage4:1,
-		multi1:1.5,
-		multi2:2,
-		multi3:3,
+		multi1:2,
+		multi2:3,
+		multi3:4,
 		multi4:5,
 		levelScore:0
 	
@@ -43,20 +43,21 @@ function flickKick(){
 		postHeight:600,
 		postThick:10,
 		barheight:200,
-		postWidth:300,
+		postWidth:200,
 		dToPosts:700,
 		cameraHeight:30,
-		fovAddedMaxHtAtPosts:150,
+		fovAddedMaxHtAtPosts:200,
 		gravity:30,
 		pitchAngle:60,
 		dToScreen:30,
 		dSceenToBall:20,
 		balllength:15,
 		ballWidth:10,
-		flightFrames:40,
+		flightFrames:30,
 		vfactor:60,
-		windFactor:0,
-		curView:1
+		windFactor:2,
+		curView:1,
+		ballPos:0
 
 	};
 
@@ -93,7 +94,7 @@ function flickKick(){
 		postsScreenWidth:0,
 		topPostsScreenY:0,
 		postsScreenHeight:0,
-		sidePost:0.75
+		sideDiff:0 
 
 	};
 	
@@ -114,6 +115,8 @@ function flickKick(){
 		obj.world.ballHfactor = obj.world.ballWidth/obj.world.balllength;
 
 		obj.world.fov = (Math.atan((obj.world.fovAddedMaxHtAtPosts+(obj.world.postHeight-obj.world.cameraHeight))/(obj.world.dToPosts+obj.world.dToScreen+obj.world.dSceenToBall)))/(Math.PI/180);
+
+		//obj.world.fov = 40;
 
 		$.logThis("fov :> "+obj.world.fov);
 
@@ -179,37 +182,87 @@ function flickKick(){
 
 	this.drawPosts = function(){
 
-		var cameraToPosts = obj.world.dToPosts + obj.world.dSceenToBall + obj.world.dToScreen;
+		//$.logThis("side :> "+obj.posts.sideDiff);
 
-		var heightOfFovAtPosts = Math.tan(obj.world.fov * Math.PI/180)*cameraToPosts;
+		if(obj.posts.sideDiff > ((obj.world.postWidth/2)*-1) && obj.posts.sideDiff < (obj.world.postWidth/2)){
 
-		var topPostsProjY = (obj.world.postHeight-obj.world.cameraHeight)/heightOfFovAtPosts;
+			$.logThis("ball inside posts");
 
-		obj.posts.topPostsScreenY = (obj.worldHeight/2) - ((obj.worldHeight/2)*topPostsProjY);
-
-		obj.posts.postsScreenHeight = (obj.world.postHeight/heightOfFovAtPosts)*(obj.worldHeight/2);
-
-		if(obj.world.curView == 1){
-		obj.posts.postsScreenWidth = (obj.world.postWidth/heightOfFovAtPosts)*(obj.worldHeight/2);
+			var rPostDiffToBall = (obj.world.postWidth/2)-obj.posts.sideDiff;
+		
 		}else{
-			obj.posts.postsScreenWidth = ((obj.world.postWidth*obj.posts.sidePost)/heightOfFovAtPosts)*(obj.worldHeight/2)
+
+			var rPostDiffToBall = obj.posts.sideDiff-(obj.world.postWidth/2);
+
+			$.logThis("ball outside posts");
+
 		}
 
-		obj.posts.thickness = (obj.world.postThick/heightOfFovAtPosts)*(obj.worldHeight/2);
+		var rPostd = Math.sqrt(Math.pow(rPostDiffToBall,2)+Math.pow(obj.world.dToPosts,2));
 
-		obj.posts.crossBarHeight = (obj.world.barheight/heightOfFovAtPosts)*(obj.worldHeight/2);
+		$.logThis("rPostd :> "+rPostd);
 
-		obj.ball.postHitW = obj.posts.postsScreenWidth/2;
+		var rPostAngle = Math.atan(700/rPostDiffToBall);
 
-		obj.ball.leftPost = obj.midX-obj.ball.postHitW;
+		$.logThis("rPostAngle :> "+rPostAngle+" :: actual angle :> "+rPostAngle/(Math.PI/180));
+		
+		if(obj.posts.sideDiff > ((obj.world.postWidth/2)*-1) && obj.posts.sideDiff < (obj.world.postWidth/2)){
+
+			var centerAngle = ((90 * (Math.PI/180)) - Math.atan(700/obj.posts.sideDiff))+(90 * (Math.PI/180));
+
+			$.logThis("centerAngle :> "+centerAngle);
+
+			var rPostAngleFromCemter = centerAngle - rPostAngle;
+
+		}else{
+
+			var centerAngle = Math.atan(700/obj.posts.sideDiff);
+			$.logThis("centerAngle :> "+centerAngle);
+
+			var rPostAngleFromCemter = rPostAngle - centerAngle;
+
+		}
+
+		$.logThis("rPostAngleFromCemter :> "+rPostAngleFromCemter+" :: actual angle :> "+rPostAngleFromCemter/(Math.PI/180));
+
+		var rPostwidthFromCenter =  Math.sin(rPostAngleFromCemter)*rPostd;
+
+		$.logThis("rPostwidthFromCenter :> "+rPostwidthFromCenter);
+
+		var rPostToCamera = rPostwidthFromCenter/Math.tan(rPostAngleFromCemter);
+
+		var WidthOfFovAtRPost = Math.tan(obj.world.fov * Math.PI/180)*rPostToCamera;
+
+		var rthickness = (obj.world.postThick/WidthOfFovAtRPost)*(obj.worldWidth/2);
+
+		var screenRPost = (rPostwidthFromCenter/(WidthOfFovAtRPost/2))*(obj.worldWidth/2); 
+
+		obj.posts.screenRPost = screenRPost;
+
+		$.logThis("WidthOfFovAtRPost :> "+WidthOfFovAtRPost/2+" :: screenRPost :> "+screenRPost);
+
+		var rPostHeight = (obj.world.postHeight/WidthOfFovAtRPost)*(obj.worldHeight/2);
+
+		var topRPostProjY = (obj.world.postHeight-obj.world.cameraHeight)/WidthOfFovAtRPost;
+
+		var topRPostsScreenY = (obj.worldHeight/2) - ((obj.worldHeight/2)*topRPostProjY);
+
+
+		$.logThis('topRPostsScreenY :> '+topRPostsScreenY);
 
 		context.save();
-		context.translate(obj.midX,obj.posts.topPostsScreenY);
+		context.translate(obj.midX,topRPostsScreenY);
 
 		context.beginPath();
-	    context.rect((obj.ball.postHitW+obj.posts.thickness)*-1, 0, obj.posts.thickness, obj.posts.postsScreenHeight);
+		/*context.moveTo(screenRPost,0);
+		context.lineTo(screenRPost, rPostHeight);
+		context.lineWidth = rthickness;
+      	context.strokeStyle = "red";
+		context.stroke();*/
 
-		var grd1 = context.createLinearGradient((obj.ball.postHitW+obj.posts.thickness)*-1, 0, obj.ball.postHitW*-1, 0);
+		context.rect(screenRPost, 0, rthickness, rPostHeight);
+
+		var grd1 = context.createLinearGradient(screenRPost, 0, screenRPost+rthickness, 0);
 	    // light blue
 	    grd1.addColorStop(0, '#AAA');   
 	    // dark blue
@@ -217,75 +270,129 @@ function flickKick(){
 	
 		context.fillStyle = grd1;
 
+
+		//context.fillStyle = 'yellow';
 	    context.fill();
 
-	    context.beginPath();
+		context.restore();
 
-	    context.rect(obj.ball.postHitW, 0, obj.posts.thickness, obj.posts.postsScreenHeight);
-	    
-		var grd2 = context.createLinearGradient(obj.ball.postHitW, 0, obj.ball.postHitW+obj.posts.thickness, 0);
+		// left post
+
+		var lPostDiffToBall = obj.posts.sideDiff+(obj.world.postWidth/2);
+
+		var lPostd = Math.sqrt(Math.pow(lPostDiffToBall,2)+Math.pow(obj.world.dToPosts,2));
+
+		$.logThis("lPostd :> "+lPostd);
+
+		var lPostAngle = Math.atan(700/lPostDiffToBall);
+
+		$.logThis("lPostAngle :> "+lPostAngle);
+
+		var lPostAngleFromCemter = centerAngle-lPostAngle;
+		//var lPostAngleFromCemter = lPostAngle - centerAngle;
+
+		$.logThis("lPostAngleFromCemter :> "+lPostAngleFromCemter+" :: actual angle :> "+lPostAngleFromCemter/(Math.PI/180));
+
+		var lPostwidthFromCenter =  Math.sin(lPostAngleFromCemter)*lPostd;
+
+		$.logThis("lPostwidthFromCenter :> "+lPostwidthFromCenter);
+
+		var lPostToCamera = lPostwidthFromCenter/Math.tan(lPostAngleFromCemter);
+
+		var WidthOfFovAtLPost = Math.tan(obj.world.fov * Math.PI/180)*lPostToCamera;
+
+		var screenLPost = (lPostwidthFromCenter/(WidthOfFovAtLPost/2))*(obj.worldWidth/2); 
+
+		obj.posts.screenLPost = screenLPost;
+
+		$.logThis("WidthOfFovAtLPost :> "+WidthOfFovAtLPost/2+" :: screenLPost :> "+screenLPost);
+
+		var lPostHeight = (obj.world.postHeight/WidthOfFovAtLPost)*(obj.worldHeight/2);
+
+		var topLPostProjY = (obj.world.postHeight-obj.world.cameraHeight)/WidthOfFovAtLPost;
+
+		var topLPostsScreenY = (obj.worldHeight/2) - ((obj.worldHeight/2)*topLPostProjY);
+
+		var lthickness = (obj.world.postThick/WidthOfFovAtLPost)*(obj.worldWidth/2);
+
+		context.save();
+		context.translate(obj.midX,topLPostsScreenY);
+
+		context.beginPath();
+		/*context.moveTo((screenLPost*-1),0);
+		context.lineTo((screenLPost*-1), lPostHeight);
+		context.lineWidth = lthickness;
+      	context.strokeStyle = "red";
+		context.stroke();*/
+
+		context.rect((screenLPost+lthickness)*-1, 0, lthickness, lPostHeight);
+
+		var grd2 = context.createLinearGradient((screenLPost+lthickness)*-1, 0, screenLPost*-1, 0);
 	    // light blue
-	    grd2.addColorStop(1, '#FFF');
-
 	    grd2.addColorStop(0, '#AAA');   
 	    // dark blue
-	    
+	    grd2.addColorStop(1, '#FFF');
 	
 		context.fillStyle = grd2;
 
+		//context.fillStyle = 'yellow';
 	    context.fill();
 
-	    context.beginPath();
+		context.restore();
 
-	    context.rect(obj.ball.postHitW*-1, obj.posts.postsScreenHeight - obj.posts.crossBarHeight, obj.posts.postsScreenWidth, obj.posts.thickness);
-	    
-	    var grd3 = context.createLinearGradient(0, obj.posts.postsScreenHeight - obj.posts.crossBarHeight, 0, (obj.posts.postsScreenHeight - obj.posts.crossBarHeight)+obj.posts.thickness);
+		// cross bar
+
+		var rCrossBarHeight = (obj.world.barheight/WidthOfFovAtRPost)*(obj.worldHeight/2);
+
+		var lCrossBarHeight = (obj.world.barheight/WidthOfFovAtLPost)*(obj.worldHeight/2);
+
+		context.beginPath();
+
+		context.moveTo(obj.midX + screenRPost,topRPostsScreenY+(rPostHeight-rCrossBarHeight+(rthickness/2)));
+
+		context.lineTo(obj.midX-screenLPost, topLPostsScreenY + (lPostHeight-lCrossBarHeight+(lthickness/2)));
+
+		context.lineTo(obj.midX-screenLPost, topLPostsScreenY + (lPostHeight-lCrossBarHeight-(lthickness/2)));
+
+		context.lineTo(obj.midX + screenRPost, topRPostsScreenY + (rPostHeight-rCrossBarHeight- (rthickness/2)));
+
+		context.lineTo(obj.midX + screenRPost,topRPostsScreenY+(rPostHeight-rCrossBarHeight+(rthickness/2)));
+
+		/*context.lineTo(obj.midX + screenRPost,topRPostsScreenY+(rPostHeight-rCrossBarHeight+(rthickness/2*/
+
+
+		//context.lineWidth = 1;
+      	//context.strokeStyle = "red";
+
+      	//var grd3 = context.createLinearGradient(obj.midX-screenLPost, topLPostsScreenY + (lPostHeight-lCrossBarHeight-(lthickness/2)), obj.midX-screenLPost+20, topLPostsScreenY + (lPostHeight-lCrossBarHeight+(lthickness/2)));
 	    // light blue
-	    grd3.addColorStop(0, '#FFF');   
+	    //grd3.addColorStop(0, '#FFF');   
 	    // dark blue
-	    grd3.addColorStop(1, '#AAA');
+	    //grd3.addColorStop(1, '#AAA');
 	
-		context.fillStyle = grd3;
+		//context.fillStyle = grd3;
 
-	    context.fill();
-
-		//pads
-	    
-	    context.beginPath();
-
-	    context.rect((obj.ball.postHitW+(obj.posts.thickness*2))*-1, obj.posts.postsScreenHeight-(obj.posts.crossBarHeight*0.65), obj.posts.thickness*3, obj.posts.crossBarHeight*0.65);
-
-		var grd4 = context.createLinearGradient((obj.ball.postHitW+(obj.posts.thickness*2))*-1, 0, (obj.ball.postHitW-obj.posts.thickness)*-1, 0);
+		//var grd3 = context.createLinearGradient( screenRPost, topRPostsScreenY+(rPostHeight-rCrossBarHeight+(rthickness/2)), screenLPost, topLPostsScreenY + (lPostHeight-lCrossBarHeight-(lthickness/2)));
 	    // light blue
-	    grd4.addColorStop(0, '#910000');   
+	    //grd3.addColorStop(0, '#AAA');   
 	    // dark blue
-	    grd4.addColorStop(0.5, '#de0303');
+	   // grd3.addColorStop(1, '#FFF');
 	
-		context.fillStyle = grd4;
+		//context.fillStyle = grd3;
 
-	    context.fill();
+		//context.fillStyle = 'yellow';
+	    //context.fill();
 
-	    context.beginPath();
+      	context.fillStyle = "#ccc";
+      	context.fill();
+		//.stroke();
 
-	    context.rect(obj.ball.postHitW-obj.posts.thickness, obj.posts.postsScreenHeight-(obj.posts.crossBarHeight*0.65), obj.posts.thickness*3, obj.posts.crossBarHeight*0.65);
-
-		var grd5 = context.createLinearGradient(obj.ball.postHitW-obj.posts.thickness, 0, obj.ball.postHitW+(obj.posts.thickness*2), 0);
-	    // light blue
-	    grd5.addColorStop(0, '#910000');   
-	    // dark blue
-	    grd5.addColorStop(0.5, '#de0303');
-	
-		context.fillStyle = grd5;
-
-	    context.fill();
-
-	    context.restore();
+		context.restore();
 
 	};
 
 	this.refreshWorld = function(){
 
-		
 		obj.drawPosts();
 
 		obj.drawTee();
@@ -295,8 +402,6 @@ function flickKick(){
 	};
 
 	this.getBallTrad = function(){
-
-		
 
 		if(obj.ball.curFF < obj.world.flightFrames){
 		
@@ -341,21 +446,56 @@ function flickKick(){
 
 	this.hitH = function(){
 
+		$.logThis("obj.ball.gAngle :> "+obj.ball.gAngle);
 
-		if((obj.midX - obj.ball.postHitW) < obj.indicator.x && (obj.midX + obj.ball.postHitW) > obj.indicator.x){
+		var hX = Math.tan(obj.ball.gAngle * Math.PI/180)*obj.world.dToPosts;
 
+		var cameraToBall = obj.world.dToPosts + obj.world.dToScreen + obj.world.dSceenToBall;
+
+		var widthOfFovAtBall = Math.tan(obj.world.fov * Math.PI/180)*cameraToBall;
+
+		var hXFactor = hX/(widthOfFovAtBall/2);
+
+		var wind = obj.world.windFactor*obj.ball.curFF;
+
+		var distanceFromCenter = (obj.midX*hXFactor)+wind;
+
+		if(obj.ball.gDir > 0){
+
+			distanceFromCenter = (obj.midX*hXFactor)-wind;
+
+		}
+
+		$.logThis("horsontal actual distance :> "+hX+" :: half post width :> "+obj.world.postWidth/2+" :: hXFactor :> "+hXFactor+" :d from center :> "+distanceFromCenter+" wind :> "+wind);
+
+		$.logThis("gesture angle :> "+obj.ball.gAngle+" :: gesture dir :> "+obj.ball.gDir);
+
+		if(obj.ball.gDir > 0 ){
+
+			var postDiff =  obj.posts.screenLPost;
+		
+		}else{
+			var postDiff = obj.posts.screenRPost;
+		}
+
+		$.logThis("post diff " +postDiff);
+
+		$.logThis("getTradScreenH :> "+obj.getTradScreenH(obj.world.dToPosts));
+
+		if(distanceFromCenter < postDiff){
+
+			$.logThis("kick inside posts");
 			return true;
 
 		}else{
 
+			$.logThis("kick outside posts");
 			return false;
 
-		};
-
+		}
 
 	};
 
-	
 
 	this.getBallSteps = function(mode){
 
@@ -618,11 +758,13 @@ function flickKick(){
 
 		var wind = obj.world.windFactor*obj.ball.curFF;
 
+		//obj.ball.gAngle = 8;
+
 		var hX = Math.tan(obj.ball.gAngle * Math.PI/180)*d;
 
 		var widthOfFovAtBall = Math.tan(obj.world.fov * Math.PI/180)*cameraToBall;
 
-		var hXFactor = hX/widthOfFovAtBall;
+		var hXFactor = hX/(widthOfFovAtBall/2);
 
 		var ballScreenH;
 
@@ -807,10 +949,12 @@ function flickKick(){
 				if(obj.world.curView == 1){
 
 					obj.world.curView = 2;
+					obj.posts.sideDiff = 500;
 
 				}else{
 
 					obj.world.curView = 1;
+					obj.posts.sideDiff = 0;
 
 				}
 
