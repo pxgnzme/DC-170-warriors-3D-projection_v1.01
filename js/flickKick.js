@@ -53,7 +53,7 @@ function flickKick(){
 		dSceenToBall:20,
 		balllength:15,
 		ballWidth:10,
-		flightFrames:30,
+		flightFrames:35,
 		vfactor:60,
 		windFactor:2,
 		curView:1,
@@ -94,7 +94,8 @@ function flickKick(){
 		postsScreenWidth:0,
 		topPostsScreenY:0,
 		postsScreenHeight:0,
-		sideDiff:0 
+		sideDiff:0,
+		padHeight: 0.75
 
 	};
 	
@@ -106,8 +107,6 @@ function flickKick(){
 		obj.worldHeight = obj.canvasheight;
 		obj.worldWidth = obj.worldHeight;
 
-		$.logThis("Create game : width :> "+w+" :: height :> "+ht+" world width :> "+obj.worldWidth);
-
 		$('#game_container').html("<canvas width='"+w+"' height = '"+ht+"' id = 'game_stage'/>");
 
 		obj.midX = w/2;
@@ -115,10 +114,6 @@ function flickKick(){
 		obj.world.ballHfactor = obj.world.ballWidth/obj.world.balllength;
 
 		obj.world.fov = (Math.atan((obj.world.fovAddedMaxHtAtPosts+(obj.world.postHeight-obj.world.cameraHeight))/(obj.world.dToPosts+obj.world.dToScreen+obj.world.dSceenToBall)))/(Math.PI/180);
-
-		//obj.world.fov = 40;
-
-		$.logThis("fov :> "+obj.world.fov);
 
 		canvas = document.getElementById('game_stage');
 		context = canvas.getContext('2d');
@@ -164,7 +159,7 @@ function flickKick(){
       	context.lineTo(obj.ball.teeWidth, 0);
 
       	context.quadraticCurveTo(0, 30, obj.ball.teeWidth*-1, 0);
-      	//context.lineTo(-50, 0);
+    
       	context.lineJoin = 'round';
       	context.fillStyle = '#fff568';
 	    context.fill();
@@ -182,11 +177,10 @@ function flickKick(){
 
 	this.drawPosts = function(){
 
-		//$.logThis("side :> "+obj.posts.sideDiff);
+		var inside = true;
+		var left = false;
 
 		if(obj.posts.sideDiff > ((obj.world.postWidth/2)*-1) && obj.posts.sideDiff < (obj.world.postWidth/2)){
-
-			$.logThis("ball inside posts");
 
 			var rPostDiffToBall = (obj.world.postWidth/2)-obj.posts.sideDiff;
 		
@@ -194,40 +188,35 @@ function flickKick(){
 
 			var rPostDiffToBall = obj.posts.sideDiff-(obj.world.postWidth/2);
 
-			$.logThis("ball outside posts");
+			 inside = false;
+
+			 if(obj.posts.sideDiff < 0){
+
+			 	left = true;
+
+			 }
 
 		}
 
 		var rPostd = Math.sqrt(Math.pow(rPostDiffToBall,2)+Math.pow(obj.world.dToPosts,2));
 
-		$.logThis("rPostd :> "+rPostd);
-
 		var rPostAngle = Math.atan(700/rPostDiffToBall);
-
-		$.logThis("rPostAngle :> "+rPostAngle+" :: actual angle :> "+rPostAngle/(Math.PI/180));
 		
 		if(obj.posts.sideDiff > ((obj.world.postWidth/2)*-1) && obj.posts.sideDiff < (obj.world.postWidth/2)){
 
 			var centerAngle = ((90 * (Math.PI/180)) - Math.atan(700/obj.posts.sideDiff))+(90 * (Math.PI/180));
-
-			$.logThis("centerAngle :> "+centerAngle);
 
 			var rPostAngleFromCemter = centerAngle - rPostAngle;
 
 		}else{
 
 			var centerAngle = Math.atan(700/obj.posts.sideDiff);
-			$.logThis("centerAngle :> "+centerAngle);
 
 			var rPostAngleFromCemter = rPostAngle - centerAngle;
 
 		}
 
-		$.logThis("rPostAngleFromCemter :> "+rPostAngleFromCemter+" :: actual angle :> "+rPostAngleFromCemter/(Math.PI/180));
-
 		var rPostwidthFromCenter =  Math.sin(rPostAngleFromCemter)*rPostd;
-
-		$.logThis("rPostwidthFromCenter :> "+rPostwidthFromCenter);
 
 		var rPostToCamera = rPostwidthFromCenter/Math.tan(rPostAngleFromCemter);
 
@@ -239,39 +228,73 @@ function flickKick(){
 
 		obj.posts.screenRPost = screenRPost;
 
-		$.logThis("WidthOfFovAtRPost :> "+WidthOfFovAtRPost/2+" :: screenRPost :> "+screenRPost);
-
 		var rPostHeight = (obj.world.postHeight/WidthOfFovAtRPost)*(obj.worldHeight/2);
 
 		var topRPostProjY = (obj.world.postHeight-obj.world.cameraHeight)/WidthOfFovAtRPost;
 
 		var topRPostsScreenY = (obj.worldHeight/2) - ((obj.worldHeight/2)*topRPostProjY);
 
+		//crossbar vars
 
-		$.logThis('topRPostsScreenY :> '+topRPostsScreenY);
+		var rCrossBarHeight = (obj.world.barheight/WidthOfFovAtRPost)*(obj.worldHeight/2);
+
+		//--
 
 		context.save();
 		context.translate(obj.midX,topRPostsScreenY);
 
 		context.beginPath();
-		/*context.moveTo(screenRPost,0);
-		context.lineTo(screenRPost, rPostHeight);
-		context.lineWidth = rthickness;
-      	context.strokeStyle = "red";
-		context.stroke();*/
 
 		context.rect(screenRPost, 0, rthickness, rPostHeight);
 
 		var grd1 = context.createLinearGradient(screenRPost, 0, screenRPost+rthickness, 0);
-	    // light blue
+	 
 	    grd1.addColorStop(0, '#AAA');   
-	    // dark blue
+	  
 	    grd1.addColorStop(1, '#FFF');
 	
 		context.fillStyle = grd1;
 
+	    context.fill();
 
-		//context.fillStyle = 'yellow';
+	    context.beginPath();
+
+	    context.rect(screenRPost-(rthickness*2), rPostHeight-(rCrossBarHeight*obj.posts.padHeight), rthickness*5, rCrossBarHeight*obj.posts.padHeight);
+
+	    var grd4 = context.createLinearGradient(screenRPost-(rthickness*2), 0, screenRPost+(rthickness*2), 0);
+
+	    if(inside){
+
+		   // dark #9d292b
+		   // medium #c02a2c
+		   // light #c24648
+
+		    grd4.addColorStop(0.2, '#b52624');
+
+		    grd4.addColorStop(0.3, '#c02a2c');
+	
+
+
+	    }else{
+
+	    	if(left){
+
+		    	grd4.addColorStop(0.3, '#b52624');    
+		    	
+		    	grd4.addColorStop(0.4, '#c02a2c');
+
+	    	}else{
+		    	
+		    	grd4.addColorStop(0.7, '#c02a2c');    
+		    	
+		    	grd4.addColorStop(0.8, '#cc3634');
+
+			}
+
+	    }
+
+	    context.fillStyle = grd4;
+
 	    context.fill();
 
 		context.restore();
@@ -282,20 +305,11 @@ function flickKick(){
 
 		var lPostd = Math.sqrt(Math.pow(lPostDiffToBall,2)+Math.pow(obj.world.dToPosts,2));
 
-		$.logThis("lPostd :> "+lPostd);
-
 		var lPostAngle = Math.atan(700/lPostDiffToBall);
 
-		$.logThis("lPostAngle :> "+lPostAngle);
-
 		var lPostAngleFromCemter = centerAngle-lPostAngle;
-		//var lPostAngleFromCemter = lPostAngle - centerAngle;
-
-		$.logThis("lPostAngleFromCemter :> "+lPostAngleFromCemter+" :: actual angle :> "+lPostAngleFromCemter/(Math.PI/180));
 
 		var lPostwidthFromCenter =  Math.sin(lPostAngleFromCemter)*lPostd;
-
-		$.logThis("lPostwidthFromCenter :> "+lPostwidthFromCenter);
 
 		var lPostToCamera = lPostwidthFromCenter/Math.tan(lPostAngleFromCemter);
 
@@ -305,8 +319,6 @@ function flickKick(){
 
 		obj.posts.screenLPost = screenLPost;
 
-		$.logThis("WidthOfFovAtLPost :> "+WidthOfFovAtLPost/2+" :: screenLPost :> "+screenLPost);
-
 		var lPostHeight = (obj.world.postHeight/WidthOfFovAtLPost)*(obj.worldHeight/2);
 
 		var topLPostProjY = (obj.world.postHeight-obj.world.cameraHeight)/WidthOfFovAtLPost;
@@ -315,36 +327,64 @@ function flickKick(){
 
 		var lthickness = (obj.world.postThick/WidthOfFovAtLPost)*(obj.worldWidth/2);
 
+		var lCrossBarHeight = (obj.world.barheight/WidthOfFovAtLPost)*(obj.worldHeight/2);
+
 		context.save();
 		context.translate(obj.midX,topLPostsScreenY);
 
 		context.beginPath();
-		/*context.moveTo((screenLPost*-1),0);
-		context.lineTo((screenLPost*-1), lPostHeight);
-		context.lineWidth = lthickness;
-      	context.strokeStyle = "red";
-		context.stroke();*/
 
 		context.rect((screenLPost+lthickness)*-1, 0, lthickness, lPostHeight);
 
 		var grd2 = context.createLinearGradient((screenLPost+lthickness)*-1, 0, screenLPost*-1, 0);
-	    // light blue
+
 	    grd2.addColorStop(0, '#AAA');   
-	    // dark blue
+	    
 	    grd2.addColorStop(1, '#FFF');
 	
 		context.fillStyle = grd2;
 
-		//context.fillStyle = 'yellow';
+	    context.fill();
+
+	    context.beginPath();
+
+	    context.rect((screenLPost+lthickness+(lthickness*2))*-1, lPostHeight-(lCrossBarHeight*obj.posts.padHeight), lthickness*5, lCrossBarHeight*obj.posts.padHeight);
+
+	    var grd5 = context.createLinearGradient((screenLPost+lthickness+(lthickness*2))*-1, 0, (screenLPost-(lthickness*2))*-1, 0);
+
+	    if(inside){
+
+		    
+		    grd5.addColorStop(0.7, '#c02a2c'); 
+
+		    grd5.addColorStop(0.8, '#cc3634');
+
+
+	    }else{
+
+	    	if(left){
+
+		    	grd5.addColorStop(0.3, '#b52624');    
+		    	
+		    	grd5.addColorStop(0.4, '#c02a2c');
+
+	    	}else{
+
+			    grd5.addColorStop(0.6, '#c02a2c');    
+			   
+			    grd5.addColorStop(0.7, '#cc3634');
+
+			}
+
+	    }
+
+	    context.fillStyle = grd5;
+
 	    context.fill();
 
 		context.restore();
 
 		// cross bar
-
-		var rCrossBarHeight = (obj.world.barheight/WidthOfFovAtRPost)*(obj.worldHeight/2);
-
-		var lCrossBarHeight = (obj.world.barheight/WidthOfFovAtLPost)*(obj.worldHeight/2);
 
 		context.beginPath();
 
@@ -358,34 +398,16 @@ function flickKick(){
 
 		context.lineTo(obj.midX + screenRPost,topRPostsScreenY+(rPostHeight-rCrossBarHeight+(rthickness/2)));
 
-		/*context.lineTo(obj.midX + screenRPost,topRPostsScreenY+(rPostHeight-rCrossBarHeight+(rthickness/2*/
-
-
-		//context.lineWidth = 1;
-      	//context.strokeStyle = "red";
-
-      	//var grd3 = context.createLinearGradient(obj.midX-screenLPost, topLPostsScreenY + (lPostHeight-lCrossBarHeight-(lthickness/2)), obj.midX-screenLPost+20, topLPostsScreenY + (lPostHeight-lCrossBarHeight+(lthickness/2)));
+	    var grd3 = context.createLinearGradient(obj.midX+screenRPost, 0, obj.midX+(screenLPost*-1), 0);
 	    // light blue
-	    //grd3.addColorStop(0, '#FFF');   
+	    grd3.addColorStop(0, '#AAA');   
 	    // dark blue
-	    //grd3.addColorStop(1, '#AAA');
+	    grd3.addColorStop(0.3, '#FFF');
+	    grd3.addColorStop(1, '#ccc');
 	
-		//context.fillStyle = grd3;
+		context.fillStyle = grd3;
 
-		//var grd3 = context.createLinearGradient( screenRPost, topRPostsScreenY+(rPostHeight-rCrossBarHeight+(rthickness/2)), screenLPost, topLPostsScreenY + (lPostHeight-lCrossBarHeight-(lthickness/2)));
-	    // light blue
-	    //grd3.addColorStop(0, '#AAA');   
-	    // dark blue
-	   // grd3.addColorStop(1, '#FFF');
-	
-		//context.fillStyle = grd3;
-
-		//context.fillStyle = 'yellow';
-	    //context.fill();
-
-      	context.fillStyle = "#ccc";
       	context.fill();
-		//.stroke();
 
 		context.restore();
 
@@ -446,8 +468,6 @@ function flickKick(){
 
 	this.hitH = function(){
 
-		$.logThis("obj.ball.gAngle :> "+obj.ball.gAngle);
-
 		var hX = Math.tan(obj.ball.gAngle * Math.PI/180)*obj.world.dToPosts;
 
 		var cameraToBall = obj.world.dToPosts + obj.world.dToScreen + obj.world.dSceenToBall;
@@ -466,10 +486,6 @@ function flickKick(){
 
 		}
 
-		$.logThis("horsontal actual distance :> "+hX+" :: half post width :> "+obj.world.postWidth/2+" :: hXFactor :> "+hXFactor+" :d from center :> "+distanceFromCenter+" wind :> "+wind);
-
-		$.logThis("gesture angle :> "+obj.ball.gAngle+" :: gesture dir :> "+obj.ball.gDir);
-
 		if(obj.ball.gDir > 0 ){
 
 			var postDiff =  obj.posts.screenLPost;
@@ -478,18 +494,12 @@ function flickKick(){
 			var postDiff = obj.posts.screenRPost;
 		}
 
-		$.logThis("post diff " +postDiff);
-
-		$.logThis("getTradScreenH :> "+obj.getTradScreenH(obj.world.dToPosts));
-
 		if(distanceFromCenter < postDiff){
 
-			$.logThis("kick inside posts");
 			return true;
 
 		}else{
 
-			$.logThis("kick outside posts");
 			return false;
 
 		}
@@ -598,32 +608,12 @@ function flickKick(){
 		obj.drawIndicator();
 
 		kickDisabled = false;
-
-		/*if(obj.indicator.curFrame < obj.indicator.totalFrames){
-
-			obj.indicator.mode = 1;
-
-			obj.indicator.curFrame ++;
-
-			obj.drawIndicator();
-
-			var indicatorInterval = setTimeout(obj.showIndicator(), 1000 / 30);
-
-		}else{
-
-			obj.indicator.mode = 0;
-			obj.indicator.curFrame = 0;
-			//obj.inflight = false;
-
-		}*/
 		
 
 	};
 
 	this.drawIndicator = function(){
 
-
-		$.logThis("drawIndicator @ "+obj.indicator.x+"/"+obj.indicator.y);
 
 		var indicatorColor = 'red'
 
@@ -798,12 +788,8 @@ function flickKick(){
 	};
 
 	this.launchKick = function(ev){
-
-		$.logThis("inflight at gesture :> "+obj.inflight);
 	
 		if(!obj.inflight){
-
-			$.logThis("launch kick :> "+obj.ball.curFF); 
 
 			obj.inflight = true; 
 
@@ -826,8 +812,6 @@ function flickKick(){
 			}else{
 				gestureAngle = 90-gestureAngle;
 			} 
-
-			$.logThis("gesture angle :> "+gestureAngle);
 
 			if(gestureAngle > 50){
 				gestureAngle = 50;
@@ -856,22 +840,17 @@ function flickKick(){
 
 		    obj.ball.speed = Number(velocityFactor)*obj.world.vfactor;
 
-		    //tracePath();
-
 			obj.gameLoop();
 
 			
 		}else{
 
-			$.logThis("no kick ball in flight");
 
 		}
 
 	}
 
 	this.runTimer = function(){
-
-		$.logThis("run timer");
 
 		$('#time-secs').html(obj.level.curtime);
 
@@ -884,8 +863,6 @@ function flickKick(){
 	}
 
 	this.updateTime = function(){
-
-		//$.logThis(obj.level.curtime);
 
 		obj.level.curtime--;
 
@@ -1011,8 +988,6 @@ function flickKick(){
 			var gameInterval = setTimeout(obj.gameLoop, 1000 / 30);
 
 		}else{
-
-			$.logThis("ball flight ended");
 
 			obj.showIndicator();
 
