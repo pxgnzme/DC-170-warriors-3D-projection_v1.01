@@ -55,7 +55,7 @@ function flickKick(){
 		ballWidth:10,
 		flightFrames:35,
 		vfactor:60,
-		windFactor:-2,
+		windFactor:0,
 		curView:1,
 		ballPos:0
 
@@ -75,7 +75,8 @@ function flickKick(){
 		teebase:0,
 		hitV:false,
 		hitH:false,
-		postHitW:0
+		postHitW:0,
+		curWind:0
 
 	};
 
@@ -127,6 +128,8 @@ function flickKick(){
 		$('#bg'+obj.world.curView).show();
 
 		$('.bg').css("background-size", (winHeight/2)*bgWFactor+"px "+winHeight/2+"px");
+
+		obj.updateWind();
 
 
 	};
@@ -446,6 +449,8 @@ function flickKick(){
 			obj.ball.state = 0;
 			obj.getBallSteps(0);
 
+			obj.updateWind();
+
 		}
 
 	};
@@ -476,7 +481,7 @@ function flickKick(){
 
 		var hXFactor = hX/(widthOfFovAtBall/2);
 
-		var wind = obj.world.windFactor*obj.ball.curFF;
+		var wind = obj.ball.curWind*obj.ball.curFF;
 
 		var distanceFromCenter = (obj.midX*hXFactor)+wind;
 
@@ -746,7 +751,7 @@ function flickKick(){
 
 		//var cameraToBall = d;
 
-		var wind = obj.world.windFactor*obj.ball.curFF;
+		var wind = obj.ball.curWind*obj.ball.curFF;
 
 		//obj.ball.gAngle = 8;
 
@@ -952,6 +957,10 @@ function flickKick(){
 		obj.ball.curFF = 0;
 		obj.ball.state = 0;
 
+		obj.world.windFactor += 1;
+
+		obj.updateWind();
+
 		$('.bg').hide();
 		$('#bg'+obj.world.curView).show();
 
@@ -969,6 +978,63 @@ function flickKick(){
 
 		obj.drawWorld();
 
+
+	};
+
+	this.updateWind = function(){
+
+		if(obj.world.windFactor == 0){
+
+			$('.wind').hide();
+
+		}else{
+
+			//obj.ball.curWind
+
+			$('.wind').show();
+
+			var windSelector = Math.round(Math.random() * (obj.world.windFactor - (obj.world.windFactor*-1)) + (obj.world.windFactor*-1));
+
+			//windSelector = -1;
+			
+			$.logThis("windSelector :> "+windSelector);
+
+			var windDir = "right";
+
+			if(windSelector < 0){
+
+				windDir = "left";
+
+				var windFactor = (windSelector/1)*-1;
+
+			}else{
+
+				var windFactor = windSelector/1;
+
+			}
+
+			//$.logThis('wind factor : ');
+
+			var arrowTxt = "";
+
+
+			for(var i=0; i<windFactor; i++){
+
+				arrowTxt += "<i class='fi-arrow-"+windDir+"'></i>";
+
+			}
+
+			if(windFactor == 0){
+
+				$('.wind').hide();
+
+			}
+
+			$('#wind-strength').html(arrowTxt);
+
+			obj.ball.curWind = windSelector;
+
+		}
 
 	};
 
