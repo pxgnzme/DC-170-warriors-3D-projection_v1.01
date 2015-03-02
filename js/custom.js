@@ -10,6 +10,8 @@ var postsWFactor = postsHeight/postsWidth;
 
 var myElement,mc;
 
+var initLoad = 0;
+
 //makeFullscreen();
 
 $(document).ready(function(){
@@ -20,9 +22,7 @@ $(document).ready(function(){
 	winWidth = $(window).innerWidth();
 	winHeight = $(window).innerHeight();
 
-
 	resizeListeners();
-
 
 	$('body').css("background-size", "100% "+winHeight/2+"px");
 
@@ -38,9 +38,31 @@ function startGame(){
 
 	$('#stage1').hide();
 
+	//winWidth = $(window).innerWidth();
+	//winHeight = $(window).innerHeight();
+
+	//$("#game").fullScreen(true);
+	
+	
 	if(jQuery.browser.mobile){
-		goFullScreenApi();
+		
+		//goFullScreenApi();
+		
+		//$(document).fullScreen(true);
+		$(document).fullScreen(true);
+		
+
+
+
+	}else{
+
+		launchGame();
+
 	}
+
+}
+
+function launchGame(){
 
 	$('#game_container').show();
 	$('#action_layer').show();
@@ -51,10 +73,9 @@ function startGame(){
 	gameOb = new flickKick();
 	gameOb.createGame(winWidth, winHeight);
 
-
 	setupHammer();
 
-}
+};
 
 function setupHammer(){
 
@@ -126,24 +147,45 @@ function goFullScreenApi(){
 			// go full-screen
 			if (i.requestFullscreen) {
 			    i.requestFullscreen();
+			   
 			} else if (i.webkitRequestFullscreen) {
 			    i.webkitRequestFullscreen();
+			    
 			} else if (i.mozRequestFullScreen) {
 			    i.mozRequestFullScreen();
+			    
 			} else if (i.msRequestFullscreen) {
 			    i.msRequestFullscreen();
+			    
 			}
 
+			launchGame();
 
 		//});
 		
 	}else{
+
+		launchGame();
 		
 		//alert("for best experience please pin this to your home page");
 		
 	}
 
 };
+
+$(document).bind("fullscreenchange", function() {
+    //console.log("Fullscreen " + ($(document).fullScreen() ? "on" : "off"));
+
+    //alert("full screen change");
+
+    if(initLoad < 1){
+    	launchGame();
+
+    	initLoad ++;
+    }
+    
+
+});
 
 /*function resizeCanvas(){
 

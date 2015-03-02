@@ -55,7 +55,7 @@ function flickKick(){
 		ballWidth:10,
 		flightFrames:35,
 		vfactor:60,
-		windFactor:2,
+		windFactor:-2,
 		curView:1,
 		ballPos:0
 
@@ -939,10 +939,7 @@ function flickKick(){
 
 			});
 
-
 		}
-
-		
 
 	}
 
@@ -959,8 +956,6 @@ function flickKick(){
 		$('#bg'+obj.world.curView).show();
 
 		$("#endLevel").html("").hide();
-
-		//$('#time-secs').html(obj.level.curtime);
 
 		$("#score-fraction").html(obj.score.totalOver+"/"+obj.score.totalKicks);
 

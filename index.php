@@ -17,7 +17,8 @@
     <script src="js/vendor/modernizr.js"></script>
     <script src="http://code.jquery.com/jquery-1.10.2.js"></script>
 
-    
+    <script src="js/jquery.fullscreen-min.js"></script>
+
 <!--[if IE]>
   <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
 <![endif]-->
