@@ -7312,8 +7312,8 @@ html {
 
 body {
   overflow: hidden;
-  background-color: #5f732c;
-  background-image: url("../img/grass_bg.png");
+  background-color: #738038;
+  background-image: url("../img/grass_bg4.jpg");
   background-size: 100%;
   background-position: bottom center;
   background-repeat: no-repeat;
@@ -7330,13 +7330,13 @@ body {
   position: absolute; }
 
 #bg1 {
-  background-image: url("../img/stad_bg.jpg"); }
+  background-image: url("../img/stad-1_bg.png"); }
 
 #bg2 {
-  background-image: url("../img/stad_bg2.jpg"); }
+  background-image: url("../img/stad-1_bg2.png"); }
 
 #bg3 {
-  background-image: url("../img/stad_bg2.jpg"); }
+  background-image: url("../img/stad-1_bg3.png"); }
 
 /* GAME STAGE */
 #game_container {

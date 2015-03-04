@@ -37,7 +37,7 @@
 
     <section id = "bg1" class = "bg"></section>
     <section id = "bg2" class = "bg"></section>
-    <section id = "bg2" class = "bg"></section>
+    <section id = "bg3" class = "bg"></section>
 
     <section id = "game_container"></section>
 

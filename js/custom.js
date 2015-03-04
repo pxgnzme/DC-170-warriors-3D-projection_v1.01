@@ -12,9 +12,17 @@ var myElement,mc;
 
 var initLoad = 0;
 
+var mobile = false;
+
 //makeFullscreen();
 
 $(document).ready(function(){
+
+	if(jQuery.browser.mobile){
+
+		mobile = true;
+
+	}
 
 	myElement = document.getElementById('action_layer');
 	mc = new Hammer(myElement);
@@ -24,7 +32,7 @@ $(document).ready(function(){
 
 	resizeListeners();
 
-	$('body').css("background-size", "100% "+winHeight/2+"px");
+	$('body').css("background-size", "100% "+winHeight/1.6+"px");
 
 	$('#start_game').on('click',function(){
 
@@ -44,7 +52,7 @@ function startGame(){
 	//$("#game").fullScreen(true);
 	
 	
-	if(jQuery.browser.mobile){
+	if(mobile){
 		
 		//goFullScreenApi();
 		
@@ -179,8 +187,11 @@ $(document).bind("fullscreenchange", function() {
     //alert("full screen change");
 
     if(initLoad < 1){
-    	launchGame();
 
+    	setTimeout(function(){
+    		launchGame();
+    	},1500);
+    	
     	initLoad ++;
     }
     

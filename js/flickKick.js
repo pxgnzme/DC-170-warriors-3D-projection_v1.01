@@ -23,15 +23,16 @@ function flickKick(){
 	this.level = {
 
 		curtime:60,
-		stage1:0.70,
-		stage2:0.80,
+		stage1:0.50,
+		stage2:0.75,
 		stage3:0.90,
 		stage4:1,
 		multi1:2,
 		multi2:3,
 		multi3:4,
 		multi4:5,
-		levelScore:0
+		levelScore:0,
+		parScore:30
 	
 	};
 
@@ -56,6 +57,7 @@ function flickKick(){
 		flightFrames:35,
 		vfactor:60,
 		windFactor:0,
+		windCap:0.5,
 		curView:1,
 		ballPos:0
 
@@ -76,7 +78,8 @@ function flickKick(){
 		hitV:false,
 		hitH:false,
 		postHitW:0,
-		curWind:0
+		curWind:0,
+		curDtoPosts:0
 
 	};
 
@@ -96,7 +99,8 @@ function flickKick(){
 		topPostsScreenY:0,
 		postsScreenHeight:0,
 		sideDiff:0,
-		padHeight: 0.75
+		padHeight: 0.75,
+		centerAngle:0
 
 	};
 	
@@ -123,7 +127,7 @@ function flickKick(){
 
 		obj.runTimer();
 
-		var bgWFactor = 14389/1216;
+		var bgWFactor = 1600/405;
 
 		$('#bg'+obj.world.curView).show();
 
@@ -218,6 +222,8 @@ function flickKick(){
 			var rPostAngleFromCemter = rPostAngle - centerAngle;
 
 		}
+
+		obj.posts.centerAngle = centerAngle;
 
 		var rPostwidthFromCenter =  Math.sin(rPostAngleFromCemter)*rPostd;
 
@@ -428,16 +434,14 @@ function flickKick(){
 
 	this.getBallTrad = function(){
 
-		if(obj.ball.curFF < obj.world.flightFrames){
+		if(obj.ball.curFF <= obj.world.flightFrames){
 		
 			obj.getBallSteps(1);
 			obj.ball.curFF++;
 
 		}else{
 
-			var ts =  obj.world.dToPosts/obj.world.flightFrames;
-
-			$.logThis(obj.ball.curFF*ts);
+			//var ts = obj.getDistance()/obj.world.flightFrames;
 
 			obj.indicator.x = obj.ball.curX;
 			obj.indicator.y = obj.ball.curY;
@@ -449,8 +453,6 @@ function flickKick(){
 			obj.ball.state = 0;
 			obj.getBallSteps(0);
 
-			obj.updateWind();
-
 		}
 
 	};
@@ -459,7 +461,7 @@ function flickKick(){
 
 		//return true;
 
-		if (obj.getBallHeightAtX(obj.world.dToPosts) > obj.world.barheight){
+		if (obj.getBallHeightAtX(obj.getDistance()) > obj.world.barheight){
 
 			return true;
 
@@ -481,7 +483,16 @@ function flickKick(){
 
 		var hXFactor = hX/(widthOfFovAtBall/2);
 
-		var wind = obj.ball.curWind*obj.ball.curFF;
+		if(mobile){
+
+			var wind = (obj.ball.curWind*obj.world.windCap)*obj.ball.curFF;
+		
+		}else{
+
+			var wind = obj.ball.curWind*obj.ball.curFF;
+			//var wind = 5*obj.ball.curFF;
+
+		}
 
 		var distanceFromCenter = (obj.midX*hXFactor)+wind;
 
@@ -491,6 +502,14 @@ function flickKick(){
 
 		}
 
+		if(distanceFromCenter < 0 ){
+
+			distanceFromCenter = distanceFromCenter*-1;
+
+		}
+
+		//$.logThis("distanceFromCenterd :> "+distanceFromCenter);
+
 		if(obj.ball.gDir > 0 ){
 
 			var postDiff =  obj.posts.screenLPost;
@@ -498,6 +517,8 @@ function flickKick(){
 		}else{
 			var postDiff = obj.posts.screenRPost;
 		}
+
+		//$.logThis("postDiff :> "+postDiff);
 
 		if(distanceFromCenter < postDiff){
 
@@ -514,43 +535,51 @@ function flickKick(){
 
 	this.getBallSteps = function(mode){
 
-		var ts =  obj.world.dToPosts/obj.world.flightFrames;
-		
-		var curBallLenght = obj.ballLenghtAtX(ts*obj.ball.curFF);
-		var curBallWidth = curBallLenght*obj.world.ballHfactor;
+		var ts =  obj.getDistance()/obj.world.flightFrames;
 
-		// get current vertical
-		var curBallV =  obj.getTradScreenV(ts*obj.ball.curFF,obj.getBallHeightAtX(ts*obj.ball.curFF));
+		if(obj.getBallHeightAtX(ts*obj.ball.curFF) < 0 ){
 
-		// get currnet horisontal
+			obj.ball.curFF = obj.world.flightFrames;
 
-		var curBallH = obj.getTradScreenH(ts*obj.ball.curFF);
+		}else{
 
-		obj.ball.curX = curBallH;
-		obj.ball.curY = curBallV;
+			var curBallLenght = obj.ballLenghtAtX(ts*obj.ball.curFF);
+			var curBallWidth = curBallLenght*obj.world.ballHfactor;
 
-		if(!obj.inflight){
+			// get current vertical
+			var curBallV =  obj.getTradScreenV(ts*obj.ball.curFF,obj.getBallHeightAtX(ts*obj.ball.curFF));
 
-			obj.ball.teebase = (curBallV + (curBallLenght/2));
-			obj.ball.teeWidth = (curBallLenght/2)/2;
-		
+			// get currnet horisontal
+
+			var curBallH = obj.getTradScreenH(ts*obj.ball.curFF);
+
+			obj.ball.curX = curBallH;
+			obj.ball.curY = curBallV;
+
+			if(!obj.inflight){
+
+				obj.ball.teebase = (curBallV + (curBallLenght/2));
+				obj.ball.teeWidth = (curBallLenght/2)/2;
+			
+			}
+
+			obj.drawTee();
+
+			obj.drawBall(curBallH, curBallV, curBallLenght);
+
+			if(mode == 0){
+				obj.inflight = false;
+				obj.updateWind();
+			}
+
 		}
 
-		obj.drawTee();
-
-		obj.drawBall(curBallH, curBallV, curBallLenght);
-
-		if(mode == 0){
-			obj.inflight = false;
-		}
-
-
-
-		
 
 	}
 
 	this.drawBall = function(h,v,ballL){
+
+		//$.logThis("v:> "+v);
 
 		var curState;
 
@@ -583,6 +612,7 @@ function flickKick(){
 		context.scale(obj.world.ballHfactor, curState);	
 
 		context.beginPath();
+		//$.logThis("ball L:> "+ballL);
       	context.arc(0, 0, ballL/2, 0, 2 * Math.PI, false);	
 
 		var grd = context.createRadialGradient((ballL/2)*-0.8,(ballL/2)*-0.8, ((ballL/2)/10), 0,0, (ballL/2)*2);
@@ -715,6 +745,8 @@ function flickKick(){
 
 		var hAtX = ((x * vY)/vX) - (0.5 * obj.ball.gravity * (Math.pow(x,2)/Math.pow(vX,2)));
 
+		//$.logThis("h@X :> "+hAtX);
+
 		return hAtX;
 
 	};
@@ -722,6 +754,8 @@ function flickKick(){
 
 
 	this.getTradScreenV = function(d,ht){
+
+		//$.logThis("d :> "+d+" h :> "+ht);
 
 	 	var cameraToBall = d + obj.world.dToScreen + obj.world.dSceenToBall;
 
@@ -749,11 +783,18 @@ function flickKick(){
 
 		var cameraToBall = d + obj.world.dToScreen + obj.world.dSceenToBall;
 
-		//var cameraToBall = d;
+		if(mobile){
 
-		var wind = obj.ball.curWind*obj.ball.curFF;
+			var wind = (obj.ball.curWind*obj.world.windCap)*obj.ball.curFF;
+		
+		}else{
 
-		//obj.ball.gAngle = 8;
+			var wind = obj.ball.curWind*obj.ball.curFF;
+			//var wind = 5*obj.ball.curFF;
+
+		}
+
+		//$.logThis("current wind at ball :> "+obj.ball.curWind);
 
 		var hX = Math.tan(obj.ball.gAngle * Math.PI/180)*d;
 
@@ -792,6 +833,58 @@ function flickKick(){
 
 	};
 
+	this.getDistance = function(){
+
+		if(obj.posts.sideDiff == 0){
+
+			var angleToBaseline = obj.posts.centerAngle-(obj.ball.gAngle*(Math.PI/180));
+
+			var distanceToTravel = obj.world.dToPosts/Math.sin(angleToBaseline);
+
+			var trueHDiff = obj.world.dToPosts/Math.tan(angleToBaseline);
+
+			$.logThis("true diff :> "+trueHDiff);
+
+			//if()
+			//var hDiffWWind = 
+
+		}else{
+
+			//$.logThis("ball left");
+
+			if(obj.ball.gDir > 0){
+
+				//$.logThis("shot left");
+
+				var angleToBaseline = (90*(Math.PI/180)) - (obj.posts.centerAngle-(obj.ball.gAngle*(Math.PI/180)));
+
+			}else{
+
+				//$.logThis("shot right");
+
+				var angleToBaseline = (90*(Math.PI/180)) - (obj.posts.centerAngle+(obj.ball.gAngle*(Math.PI/180)));
+
+			}	
+
+			var distanceToTravel = obj.world.dToPosts/Math.cos(angleToBaseline);
+
+			var trueHDiff = Math.tan(angleToBaseline) * obj.world.dToPosts;
+
+			$.logThis("true diff :> "+trueHDiff);
+
+		}
+		
+
+		if(distanceToTravel < 0){
+
+			distanceToTravel = distanceToTravel*-1;
+
+		}
+
+		return distanceToTravel;
+
+	};
+
 	this.launchKick = function(ev){
 	
 		if(!obj.inflight){
@@ -818,11 +911,29 @@ function flickKick(){
 				gestureAngle = 90-gestureAngle;
 			} 
 
-			if(gestureAngle > 50){
-				gestureAngle = 50;
+			if(obj.world.curView == 1){
+
+			    if(gestureAngle > 25){
+					gestureAngle = 25;
+				}
+
+			}else{
+
+				if(gestureAngle > 20){
+					gestureAngle = 20;
+				}
+
 			}
 
+			
+
 			obj.ball.gAngle = gestureAngle;
+
+			//obj.ball.gAngle = 3.1;
+
+			//$.logThis("angle :> "+obj.ball.gAngle);
+
+			//obj.ball.gAngle = 10;
 
 		    if(ev.velocity < 0){
 
@@ -833,17 +944,39 @@ function flickKick(){
 		    	velocityFactor = ev.velocity;
 		    }
 
-		    if (velocityFactor < 2.5){
+		    /*if(obj.world.curView == 1){*/
 
-		    	velocityFactor = 2.5;
+			    if (velocityFactor < 2.8){
 
-		    }else if(velocityFactor > 3.8){
+			    	velocityFactor = 2.8;
 
-		    	velocityFactor = 3.8;
+			    }else if(velocityFactor > 4){
 
-		    }
+			    	velocityFactor = 4;
+
+			    }
+
+			/*}else{
+
+				if (velocityFactor < 3){
+
+			    	velocityFactor = 3;
+
+			    }else if(velocityFactor > 5){
+
+			    	velocityFactor = 5;
+
+			    }
+
+			}*/
 
 		    obj.ball.speed = Number(velocityFactor)*obj.world.vfactor;
+
+		   // obj.ball.speed = 200;
+
+		    //$.logThis("speed :> "+obj.ball.speed);
+
+		    //obj.ball.speed = 185;
 
 			obj.gameLoop();
 
@@ -923,20 +1056,47 @@ function flickKick(){
 
 			$(".total").show();
 
-			$("#endLevel").show().html("<h2>NICE!</h2><p>You got : "+obj.score.totalOver+"/"+obj.score.totalKicks+"<br />@ "+hitPercent+"%<br />x "+multiplier+"<br />Level score: "+obj.level.levelScore+"<br />Total score: "+obj.score.curScore+"</p><button class ='next_btn'>Continue >></button>");
+			if(obj.level.levelScore < obj.level.parScore){
 
+				$("#endLevel").show().html("<h2>TOO BAD!</h2><p>You got : "+obj.score.totalOver+"/"+obj.score.totalKicks+"<br />@ "+hitPercent+"%<br />x "+multiplier+"<br />Level score: "+obj.level.levelScore+"<br />But you needed at least "+obj.level.parScore+" points to pass this level<br />You finished with "+obj.score.curScore+" total points</p><button class ='share_btn'>Share with friends</button><button class ='replay_btn'>Start again</button>");
+
+
+			}else{
+
+				$("#endLevel").show().html("<h2>NICE!</h2><p>You got : "+obj.score.totalOver+"/"+obj.score.totalKicks+"<br />@ "+hitPercent+"%<br />x "+multiplier+"<br />Level score: "+obj.level.levelScore+"<br />Total score: "+obj.score.curScore+"</p><button class ='next_btn'>Continue >></button>");
+
+			}
+
+			$('.replay_btn').on('click',function(){
+
+				obj.startAgain();
+
+			});
 
 			$('.next_btn').on('click',function(){
 
-				if(obj.world.curView == 1){
+				switch(obj.world.curView){
+
+					case 1:
 
 					obj.world.curView = 2;
 					obj.posts.sideDiff = 500;
 
-				}else{
+					break;
+
+					case 2: 
+
+					obj.world.curView = 3;
+					obj.posts.sideDiff = -500;
+
+					break;
+
+					case 3:
 
 					obj.world.curView = 1;
 					obj.posts.sideDiff = 0;
+
+					break;
 
 				}
 
@@ -957,7 +1117,13 @@ function flickKick(){
 		obj.ball.curFF = 0;
 		obj.ball.state = 0;
 
-		obj.world.windFactor += 1;
+		if(obj.world.windFactor != 6){
+
+			obj.world.windFactor += 1;
+
+			obj.level.parScore += 5;
+
+		}
 
 		obj.updateWind();
 
@@ -970,7 +1136,46 @@ function flickKick(){
 
 		var hitPercent = Math.ceil((obj.score.totalOver/obj.score.totalKicks)*100);
 
-		$('#score-percent').html(""+hitPercent+"");
+		$('#score-percent').html("");
+
+		obj.runTimer();
+
+		obj.wipeCanvas();
+
+		obj.drawWorld();
+
+
+	};
+
+	this.startAgain = function(){
+
+		obj.world.curView = 1;
+		obj.posts.sideDiff = 0;
+		obj.score.curScore = 0;
+		obj.world.windFactor = 0;
+		obj.ball.curWind = 0;
+
+		obj.level.levelScore = 0;
+		obj.level.curtime = 60;
+		obj.score.totalOver = 0;
+		obj.score.totalKicks = 0;
+		obj.ball.curFF = 0;
+		obj.ball.state = 0;
+
+		obj.updateWind();
+
+		$('.bg').hide();
+		$('#bg'+obj.world.curView).show();
+
+		$("#endLevel").html("").hide();
+
+		$("#score-fraction").html(obj.score.totalOver+"/"+obj.score.totalKicks);
+
+		var hitPercent = Math.ceil((obj.score.totalOver/obj.score.totalKicks)*100);
+
+		$('#score-percent').html("");
+
+		$(".total").hide();
 
 		obj.runTimer();
 
@@ -995,8 +1200,6 @@ function flickKick(){
 
 			var windSelector = Math.round(Math.random() * (obj.world.windFactor - (obj.world.windFactor*-1)) + (obj.world.windFactor*-1));
 
-			//windSelector = -1;
-			
 			$.logThis("windSelector :> "+windSelector);
 
 			var windDir = "right";
@@ -1013,10 +1216,9 @@ function flickKick(){
 
 			}
 
-			//$.logThis('wind factor : ');
-
 			var arrowTxt = "";
 
+			//windFactor = 5;
 
 			for(var i=0; i<windFactor; i++){
 
@@ -1032,7 +1234,11 @@ function flickKick(){
 
 			$('#wind-strength').html(arrowTxt);
 
+			//obj.ball.curWind = 5;
+
 			obj.ball.curWind = windSelector;
+
+			
 
 		}
 
