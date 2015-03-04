@@ -56,7 +56,7 @@ function flickKick(){
 		ballWidth:10,
 		flightFrames:35,
 		vfactor:60,
-		windFactor:0,
+		windFactor:5,
 		windCap:0.5,
 		curView:1,
 		ballPos:0
@@ -78,7 +78,7 @@ function flickKick(){
 		hitV:false,
 		hitH:false,
 		postHitW:0,
-		curWind:0,
+		curWind:5,
 		curDtoPosts:0
 
 	};
@@ -475,9 +475,15 @@ function flickKick(){
 
 	this.hitH = function(){
 
-		var hX = Math.tan(obj.ball.gAngle * Math.PI/180)*obj.world.dToPosts;
+		var hX = Math.tan(obj.ball.gAngle * Math.PI/180)*obj.getDistance();
 
-		var cameraToBall = obj.world.dToPosts + obj.world.dToScreen + obj.world.dSceenToBall;
+		//var hX = Math.tan(obj.ball.gAngle * Math.PI/180)*obj.world.dToPosts;
+
+		//$.logThis("d :> "+obj.getDistance()+" :: obj.world.dToPosts :> "+obj.world.dToPosts);
+
+		//var hX = Math.tan(obj.ball.gAngle * Math.PI/180)*obj.getDistance();
+
+		var cameraToBall = obj.getDistance() + obj.world.dToScreen + obj.world.dSceenToBall;
 
 		var widthOfFovAtBall = Math.tan(obj.world.fov * Math.PI/180)*cameraToBall;
 
@@ -518,7 +524,7 @@ function flickKick(){
 			var postDiff = obj.posts.screenRPost;
 		}
 
-		//$.logThis("postDiff :> "+postDiff);
+		$.logThis("postDiff :> "+postDiff+" :: distanceFromCenterd :> "+distanceFromCenter);
 
 		if(distanceFromCenter < postDiff){
 
@@ -815,6 +821,7 @@ function flickKick(){
 		}
 
 		return ballScreenH+wind;
+		//return ballScreenH;
 
 	};
 
@@ -843,7 +850,27 @@ function flickKick(){
 
 			var trueHDiff = obj.world.dToPosts/Math.tan(angleToBaseline);
 
-			$.logThis("true diff :> "+trueHDiff);
+			var hX = Math.tan(obj.ball.gAngle * Math.PI/180)*obj.world.dToPosts;
+
+			if(mobile){
+
+				var wind = (obj.ball.curWind*obj.world.windCap)*obj.world.flightFrames;
+			
+			}else{
+
+				var wind = obj.ball.curWind*obj.world.flightFrames;
+				//var wind = 5*obj.ball.curFF;
+
+			}
+
+			var hWWind = hX - wind;
+
+
+			$.logThis("distanceToTravel :> "+distanceToTravel+" :: hX :> "+hX+" :: hWWind :> "+hWWind);
+
+			var dWWind = Math.sqrt(Math.pow(hWWind,2)+Math.pow(obj.world.dToPosts,2));
+
+			$.logThis("distance with wind :> "+dWWind);
 
 			//if()
 			//var hDiffWWind = 
@@ -868,20 +895,23 @@ function flickKick(){
 
 			var distanceToTravel = obj.world.dToPosts/Math.cos(angleToBaseline);
 
+			var dWWind =  distanceToTravel;
+
 			var trueHDiff = Math.tan(angleToBaseline) * obj.world.dToPosts;
 
-			$.logThis("true diff :> "+trueHDiff);
+			//$.logThis("true diff :> "+trueHDiff);
 
 		}
 		
 
-		if(distanceToTravel < 0){
+		/*if(distanceToTravel < 0){
 
 			distanceToTravel = distanceToTravel*-1;
 
-		}
+		}*/
 
-		return distanceToTravel;
+		//return distanceToTravel;
+		return dWWind;
 
 	};
 
@@ -929,7 +959,7 @@ function flickKick(){
 
 			obj.ball.gAngle = gestureAngle;
 
-			//obj.ball.gAngle = 3.1;
+			obj.ball.gAngle = 1.9;
 
 			//$.logThis("angle :> "+obj.ball.gAngle);
 
@@ -1200,7 +1230,7 @@ function flickKick(){
 
 			var windSelector = Math.round(Math.random() * (obj.world.windFactor - (obj.world.windFactor*-1)) + (obj.world.windFactor*-1));
 
-			$.logThis("windSelector :> "+windSelector);
+			//$.logThis("windSelector :> "+windSelector);
 
 			var windDir = "right";
 
@@ -1220,6 +1250,8 @@ function flickKick(){
 
 			//windFactor = 5;
 
+			windFactor = obj.world.windFactor;
+
 			for(var i=0; i<windFactor; i++){
 
 				arrowTxt += "<i class='fi-arrow-"+windDir+"'></i>";
@@ -1234,9 +1266,9 @@ function flickKick(){
 
 			$('#wind-strength').html(arrowTxt);
 
-			//obj.ball.curWind = 5;
+			obj.ball.curWind = obj.world.windFactor;
 
-			obj.ball.curWind = windSelector;
+			//obj.ball.curWind = windSelector;
 
 			
 
